@@ -1,9 +1,11 @@
-const nameInput = document.getElementById('name');
-const connectButton = document.getElementById('connect');
-const slider = document.getElementById('volume');
+const messageInput = document.getElementById('message');
+const sendButton = document.getElementById('send');
+const messageList = document.getElementById('messageList');
 
-connectButton.addEventListener('click', function() {
-    const userText = nameInput.value;
-    console.log('User input:', userText);
-    nameInput.value = '';
+sendButton.addEventListener('click', function() {
+    const userText = messageInput.value;
+    const newMessage = document.createElement('div');
+    newMessage.textContent = userText;
+    messageList.appendChild(newMessage);
+    messageInput.value = '';
 });
