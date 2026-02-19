@@ -7,6 +7,7 @@
 
     <body>
         <h1>Peer-to-Peer Chat Application</h1>
+        
 
         <label for="message">Enter your message:</label>
         <input type="text" id="message" name="message" onkeydown="sendMessage(event)">
@@ -14,6 +15,7 @@
 
         <div id="messageList"></div>
         
+        <script src="/socket.io/socket.io.js"></script>
         <script src="app.js"></script>
     </body>
 </html>
