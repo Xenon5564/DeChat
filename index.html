@@ -7,14 +7,21 @@
 
     <body>
         <h1>Peer-to-Peer Chat Application</h1>
-        <label for="username">Enter your username:</label>
-        <input type="text" id="usernameInput" name="username">
 
-        <label for="message">Enter your message:</label>
-        <input type="text" id="content" name="message" onkeydown="sendMessage(event)">
-        <button id="send">Send Message</button>
+        <div id="loginPage">
+            <label for="username">Enter your username:</label>
+            <input type="text" id="usernameInput" name="username">
+            <button id="loginButton">Login</button>
+        </div>
+        
+        <div id="chatPage" style="display: none;">
+            <label for="message">Enter your message:</label>
+            <input type="text" id="content" name="message">
+            <button id="send">Send Message</button>
+            <button id="disconnectButton">Disconnect</button>
 
-        <div id="messageList"></div>
+            <div id="messageList"></div>
+        </div>
         
         <script src="/socket.io/socket.io.js"></script>
         <script src="app.js"></script>

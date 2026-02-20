@@ -1,34 +1,78 @@
-const message = {
-    username: 'guest',
-    content: 'Hello'
-}
+let socket;
+let myUsername;
 
-const socket = io();
 const messageInput = document.getElementById('content');
 const usernameInput = document.getElementById('usernameInput');
-const sendButton = document.getElementById('send');
-const messageList = document.getElementById('messageList');
 
+const sendButton = document.getElementById('send');
+const loginButton = document.getElementById('loginButton');
+const disconnectButton = document.getElementById('disconnectButton');
+
+const messageList = document.getElementById('messageList');
+const loginPage = document.getElementById('loginPage');
+const chatPage = document.getElementById('chatPage');
+
+function joinChat(name) {
+    myUsername = name;
+    socket = io();
+    socket.emit('join', name);
+
+    loginPage.style.display = 'none';
+    chatPage.style.display = 'block';
+
+    socket.on('chat message', function(msg) {
+        const item = document.createElement('div');
+        item.textContent = msg.username + ': ' + msg.content;
+        messageList.appendChild(item);
+    });
+}
+
+loginButton.addEventListener('click', function() {
+    const name = usernameInput.value.trim();
+    if (name !== '') {
+        localStorage.setItem('username', name);
+        joinChat(name);
+    }
+    else {
+        alert('Please enter a username');
+    }
+});
 
 function sendMessage(event) {
-    if(event.key === 'Enter' || event.type === 'click') {
-        const content = messageInput.value;
-        if (content.trim() !== '') {
-            const name = usernameInput.value.trim() || 'Anonymous';
-            const messageContent = content.trim();
-            const messageObject = {username: name, content: messageContent};
-
-            socket.emit('chat message', messageObject);
-            messageInput.value = '';
-        }
+    const text = messageInput.value.trim();
+    if (text !== '' && socket) {
+        const msgObject = {
+            username: myUsername,
+            content: text
+        };
+        socket.emit('chat message', msgObject);
+        messageInput.value = '';
     }
 }
 
 sendButton.addEventListener('click', sendMessage);
-
-socket.on('chat message', function(msg) {
-    const messageElement = document.createElement('div');
-    messageElement.textContent = msg.username + ': ' + msg.content;
-    messageList.appendChild(messageElement);
+disconnectButton.addEventListener('click', function() {
+    if (socket) {
+        socket.emit('chat message', { username: 'System', content: myUsername + ' has left the chat' });
+        socket.disconnect();
+        socket = null;
+        loginPage.style.display = 'block';
+        chatPage.style.display = 'none';
+    }
 });
+messageInput.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        sendMessage(event);
+    }
+})
+usernameInput.addEventListener('keydown', function(event) {;
+    if (event.key === 'Enter') {
+        loginButton.click();
+    }
+});
+
+const savedName = localStorage.getItem('username');
+if (savedName) {
+    joinChat(savedName);
+}
 
