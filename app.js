@@ -12,18 +12,40 @@ const messageList = document.getElementById('messageList');
 const loginPage = document.getElementById('loginPage');
 const chatPage = document.getElementById('chatPage');
 
+function displayMessage(msg) {
+    const item = document.createElement('div');
+    item.textContent = msg.username + ': ' + msg.content;
+    messageList.appendChild(item);
+    messageInput.scrollTop = messageList.scrollHeight;
+}
+
 function joinChat(name) {
     myUsername = name;
-    socket = io();
-    socket.emit('join', name);
+    
+    let firstJoinTime = localStorage.getItem('joinTime');
+    if(!firstJoinTime) {
+        firstJoinTime = Date.now();
+        localStorage.setItem('joinTime', firstJoinTime);
+    }
 
+    socket = io();
+
+    socket.emit('join',{
+        username: myUsername,
+        firstJoined: parseInt(firstJoinTime)
+    });
+    
     loginPage.style.display = 'none';
     chatPage.style.display = 'block';
 
+    socket.on('chat history', function(history) {
+        history.forEach(msg => {
+            displayMessage(msg)
+        });
+    });
+
     socket.on('chat message', function(msg) {
-        const item = document.createElement('div');
-        item.textContent = msg.username + ': ' + msg.content;
-        messageList.appendChild(item);
+        displayMessage(msg);
     });
 }
 
