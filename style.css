@@ -18,10 +18,17 @@ body {
     width: 400px;
     height: 300px;
     overflow-y: auto;
-    overflow-x: auto;
     box-sizing: border-box;
     scrollbar-width: thick;
     scrollbar-color: #888 #2a2a40;
+}
+
+#messageCointainer{
+    background-color: #444468;
+    border-radius: 5px;
+    border: #535374 2px solid;
+    margin-bottom: 2px;
+    padding: 5px;
 }
 
 #content {
@@ -44,7 +51,7 @@ body {
     background-color: #f1f1f1;
 }
 
-#loginButton, #send, #disconnectButton {
+#loginButton, #send, #disconnectButton{
     padding: 10px 20px;
     margin-top: 10px;
     border: none;
@@ -69,8 +76,7 @@ body {
     width: 100%;
 }
 
-#chatPage div {
-
+.message-bubble {
     background-color: #444468;
     border-radius: 5px;
     border: #535374 2px solid;
@@ -95,4 +101,12 @@ body {
     margin-left: 20px;
     padding: 10px;
     box-sizing: border-box;
+}
+
+.chat-image {
+    max-width: 100%;
+    height: auto; /* Keeps the aspect ratio visually */
+    display: block;
+    border-radius: 8px;
+    margin-top: 5px;
 }

@@ -1,12 +1,13 @@
 let socket;
 let myUsername;
 
-const notificationSound = new Audio('Notification.wav');
-const userJoinedSound = new Audio('UserConnected.wav');
-const userLeftSound = new Audio('UserDisconnected.wav');
+const notificationSound = new Audio('Sounds/Notification.wav');
+const userJoinedSound = new Audio('Sounds/UserConnected.wav');
+const userLeftSound = new Audio('Sounds/UserDisconnected.wav');
 
 const messageInput = document.getElementById('content');
 const usernameInput = document.getElementById('usernameInput');
+const imageInput = document.getElementById('attachment');
 
 const sendButton = document.getElementById('send');
 const loginButton = document.getElementById('loginButton');
@@ -18,7 +19,24 @@ const chatPage = document.getElementById('chatPage');
 
 function displayMessage(msg) {
     const item = document.createElement('div');
-    item.textContent = msg.username + ': ' + msg.content;
+    item.classList.add('message-bubble');
+
+    const nameSpan = document.createElement('strong');
+    nameSpan.textContent = msg.username + ': ';
+    item.appendChild(nameSpan);
+
+    if (msg.type === 'image') {
+        const img = document.createElement('img');
+        img.src = msg.content;
+        img.classList.add('chat-image');
+        img.classList.add
+        item.appendChild(img);
+    }else {
+        const textSpan = document.createElement('span');
+        textSpan.textContent = msg.content;
+        item.appendChild(textSpan);
+    }
+
     messageList.appendChild(item);
     messageList.scrollTop = messageList.scrollHeight;
 }
@@ -74,23 +92,6 @@ function joinChat(name) {
     });
 }
 
-loginButton.addEventListener('click', function() {
-    const name = usernameInput.value.trim();
-    if (name === 'System')
-    {
-        alert('Username "System" is reserved. Please choose another one.');
-        return;
-    }
-
-    if (name !== '') {
-        localStorage.setItem('username', name);
-        joinChat(name);
-    }
-    else {
-        alert('Please enter a username');
-    }
-});
-
 function sendMessage(event) {
     const text = messageInput.value.trim();
     if (text !== '' && socket) {
@@ -113,6 +114,22 @@ disconnectButton.addEventListener('click', function() {
         chatPage.style.display = 'none';
     }
 });
+loginButton.addEventListener('click', function() {
+    const name = usernameInput.value.trim();
+    if (name === 'System')
+    {
+        alert('Username "System" is reserved. Please choose another one.');
+        return;
+    }
+
+    if (name !== '') {
+        localStorage.setItem('username', name);
+        joinChat(name);
+    }
+    else {
+        alert('Please enter a username');
+    }
+});
 messageInput.addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
         sendMessage(event);
@@ -121,6 +138,66 @@ messageInput.addEventListener('keydown', function(event) {
 usernameInput.addEventListener('keydown', function(event) {;
     if (event.key === 'Enter') {
         loginButton.click();
+    }
+});
+imageInput.addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            
+
+            if(file.type === 'image/gif') {
+                const msgObject = {
+                    username: myUsername,
+                    type: 'image',
+                    content: img.src
+                }
+                socket.emit('chat message', msgObject);
+                imageInput.value = '';
+                return;
+            }
+            else if (file.type.startsWith('image/')) {
+                const img = new Image();
+                img.src = e.target.result;
+
+                img.onload = function() {
+                    const maxSize = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxSize || height > maxSize) {
+                        const aspectRatio = width / height;
+                        if (aspectRatio > 1) {
+                            width = maxSize;
+                            height = maxSize / aspectRatio;
+                        }
+                        else {
+                            height = maxSize;
+                            width = maxSize * aspectRatio;
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const resizedImage = canvas.toDataURL('image/jpeg', 0.7);
+
+
+                        const msgObject = {
+                            username: myUsername,
+                            type: 'image',
+                            content: resizedImage
+                        }
+                        socket.emit('chat message', msgObject);
+                        imageInput.value = '';
+                    }
+                }
+            reader.readAsDataURL(file);
+            }
+        }
     }
 });
 
