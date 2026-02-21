@@ -1,29 +1,34 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <title>P2P-Chat</title>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="style.css">
+        <title>P2P-Chat</title>
     </head>
 
     <body>
-        <h1>Peer-to-Peer Chat Application</h1>
+        <div id="container">
+            <h1>Peer-to-Peer Chat Application</h1>
 
-        <div id="loginPage">
-            <label for="username">Enter your username:</label>
-            <input type="text" id="usernameInput" name="username">
-            <button id="loginButton">Login</button>
+            <div id="loginPage">
+                <label>Enter your username:</label>
+                <input type="text" id="usernameInput" name="username" autocomplete="on">
+                <button id="loginButton">Connect</button>
+            </div>
+            
+            <div id="chatPage" style="display: none;">
+                <div id="messageContainer">
+                    <div id="messageList"></div>
+                </div>
+                
+                <label>Enter your message:</label>
+                <input type="text" id="content" name="message">
+                <button id="send">Send Message</button>
+                <button id="disconnectButton">Disconnect</button>
+            </div>
+            
+            <script src="/socket.io/socket.io.js"></script>
+            <script src="app.js"></script>
         </div>
-        
-        <div id="chatPage" style="display: none;">
-            <label for="message">Enter your message:</label>
-            <input type="text" id="content" name="message">
-            <button id="send">Send Message</button>
-            <button id="disconnectButton">Disconnect</button>
-
-            <div id="messageList"></div>
-        </div>
-        
-        <script src="/socket.io/socket.io.js"></script>
-        <script src="app.js"></script>
     </body>
 </html>

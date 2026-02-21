@@ -1,0 +1,80 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+#container {
+    background-color: #2a2a40;
+    color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+#messageList {
+    width: 400px;
+    height: 300px;
+    overflow-y: auto;
+    overflow-x: auto;
+    box-sizing: border-box;
+    scrollbar-width: thick;
+    scrollbar-color: #888 #2a2a40;
+}
+
+#content {
+    width: 400px;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+}
+
+#usernameInput, #content {
+    width: 200px;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+}
+
+#usernameInput:hover, #content:hover {
+    background-color: #f1f1f1;
+}
+
+#loginButton, #send, #disconnectButton {
+    padding: 10px 20px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+}
+
+#loginButton:hover, #send:hover {
+    background-color: #45a049;
+}
+
+#disconnectButton:hover {
+    background-color: #d9534f;
+}
+
+#messageContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+#chatPage div {
+    background-color: #444468;
+    border-radius: 5px;
+    border: #535374 2px solid;
+    margin-bottom: 2px;
+    padding: 5px;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+}

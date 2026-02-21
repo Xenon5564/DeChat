@@ -16,7 +16,7 @@ function displayMessage(msg) {
     const item = document.createElement('div');
     item.textContent = msg.username + ': ' + msg.content;
     messageList.appendChild(item);
-    messageInput.scrollTop = messageList.scrollHeight;
+    messageList.scrollTop = messageList.scrollHeight;
 }
 
 function joinChat(name) {
