@@ -7,14 +7,18 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 let chatHistory = [];
+let onlineUsers = {};
 
 app.use(express.static(__dirname));
 
 io.on ('connection', (socket) => {
     socket.on('join', (data) => {
         socket.username = data.username;
+        onlineUsers[socket.id] = socket.username;
+
         console.log(data.username + ' joined the chat');
         io.emit('chat message', { username: 'System', content: data.username + ' has joined the chat' });
+        io.emit('user list', Object.values(onlineUsers));
         
         const filteredHistory = chatHistory.filter(msg => msg.timestamp >= data.firstJoined);
         socket.emit('chat history', filteredHistory);
@@ -28,6 +32,8 @@ io.on ('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log(socket.username + ' disconnected');
+        delete onlineUsers[socket.id];
+        io.emit('user list', Object.values(onlineUsers));
         io.emit('chat message', { username: 'System', content: socket.username + ' has left the chat' });
     });
 });

@@ -8,7 +8,7 @@
 
     <body>
         <div id="container">
-            <h1>Peer-to-Peer Chat Application</h1>
+            <h1>DeChat</h1>
 
             <div id="loginPage">
                 <label>Enter your username:</label>
@@ -17,15 +17,21 @@
             </div>
             
             <div id="chatPage" style="display: none;">
-                <div id="messageContainer">
-                    <div id="messageList"></div>
+                <div id="chatBody">
+                    <div id="messageContainer">
+                        <div id="messageList"></div>
+                    </div>
+                    
+                    <div id="userListContainer">
+                        <h3>Online Users:</h3>
+                        <ul id="userList"></ul>
+                    </div>
                 </div>
-                
+
                 <label>Enter your message:</label>
                 <input type="text" id="content" name="message">
                 <button id="send">Send Message</button>
                 <button id="disconnectButton">Disconnect</button>
-            </div>
             
             <script src="/socket.io/socket.io.js"></script>
             <script src="app.js"></script>

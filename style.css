@@ -70,6 +70,7 @@ body {
 }
 
 #chatPage div {
+
     background-color: #444468;
     border-radius: 5px;
     border: #535374 2px solid;
@@ -77,4 +78,21 @@ body {
     padding: 5px;
     box-sizing: border-box;
     overflow-wrap: break-word;
+}
+
+#chatBody {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: 100%;
+}
+
+#userListContainer {
+    width: 250px;
+    background-color: #444468;
+    border-radius: 5px;
+    border: #535374 2px solid;
+    margin-left: 20px;
+    padding: 10px;
+    box-sizing: border-box;
 }
