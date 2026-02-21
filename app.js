@@ -1,6 +1,10 @@
 let socket;
 let myUsername;
 
+const notificationSound = new Audio('Notification.wav');
+const userJoinedSound = new Audio('UserConnected.wav');
+const userLeftSound = new Audio('UserDisconnected.wav');
+
 const messageInput = document.getElementById('content');
 const usernameInput = document.getElementById('usernameInput');
 
@@ -46,11 +50,28 @@ function joinChat(name) {
 
     socket.on('chat message', function(msg) {
         displayMessage(msg);
+        if(msg.username !== myUsername) {
+            notificationSound.play();
+            if(msg.username === 'System') {
+                if(msg.content.includes('joined')) {
+                    userJoinedSound.play();
+                }
+                else if(msg.content.includes('left')) {
+                    userLeftSound.play();
+                }
+            }
+        }
     });
 }
 
 loginButton.addEventListener('click', function() {
     const name = usernameInput.value.trim();
+    if (name === 'System')
+    {
+        alert('Username "System" is reserved. Please choose another one.');
+        return;
+    }
+
     if (name !== '') {
         localStorage.setItem('username', name);
         joinChat(name);
