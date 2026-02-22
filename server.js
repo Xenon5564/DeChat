@@ -13,15 +13,24 @@ app.use(express.static(__dirname));
 
 io.on ('connection', (socket) => {
     socket.on('join', (data) => {
-        socket.username = data.username;
-        onlineUsers[socket.id] = socket.username;
+        if(Object.values(onlineUsers).includes(data.username)) {
+            socket.emit('join error', 'Username already taken');
+            return;
+        } else{
+            socket.username = data.username;
+            onlineUsers[socket.id] = socket.username;
 
-        console.log(data.username + ' joined the chat');
-        io.emit('chat message', { username: 'System', content: data.username + ' has joined the chat' });
-        io.emit('user list', Object.values(onlineUsers));
-        
-        const filteredHistory = chatHistory.filter(msg => msg.timestamp >= data.firstJoined);
-        socket.emit('chat history', filteredHistory);
+            socket.emit('join success');
+
+            console.log(data.username + ' joined the chat');
+            const connectMessage = { username: 'System', content: data.username + ' has joined the chat' };
+            chatHistory.push(connectMessage);
+            io.emit('chat message', connectMessage);
+            io.emit('user list', Object.values(onlineUsers));
+            
+            const filteredHistory = chatHistory.filter(msg => msg.timestamp >= data.firstJoined);
+            socket.emit('chat history', filteredHistory);
+        }
     });
 
     socket.on('chat message', (msg) => {
@@ -30,12 +39,16 @@ io.on ('connection', (socket) => {
         io.emit('chat message', msg);
     });
 
-    socket.on('disconnect', () => {
-        console.log(socket.username + ' disconnected');
-        delete onlineUsers[socket.id];
-        io.emit('user list', Object.values(onlineUsers));
-        io.emit('chat message', { username: 'System', content: socket.username + ' has left the chat' });
-    });
+        socket.on('disconnect', () => {
+            if(socket.username !== undefined) {
+                console.log(socket.username + ' disconnected');
+                delete onlineUsers[socket.id];
+                io.emit('user list', Object.values(onlineUsers));
+                const disconnectMessage = { username: 'System', content: socket.username + ' has left the chat' };
+                chatHistory.push(disconnectMessage);
+                io.emit('chat message', disconnectMessage);
+            }
+        });
 });
 
 server.listen(3000, () => {

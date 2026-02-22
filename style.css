@@ -1,11 +1,11 @@
 body {
+    background-color: #2a2a40;
+    color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
 }
 #container {
-    background-color: #2a2a40;
-    color: #f0f0f0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -15,8 +15,8 @@ body {
 }
 
 #messageList {
-    width: 400px;
-    height: 300px;
+    width: 80vh;
+    height: 80vh;
     overflow-y: auto;
     box-sizing: border-box;
     scrollbar-width: thick;
@@ -51,7 +51,7 @@ body {
     background-color: #f1f1f1;
 }
 
-#loginButton, #send, #disconnectButton{
+#loginButton, #send, #disconnectButton, #attachmentButton{
     padding: 10px 20px;
     margin-top: 10px;
     border: none;
@@ -76,15 +76,7 @@ body {
     width: 100%;
 }
 
-.message-bubble {
-    background-color: #444468;
-    border-radius: 5px;
-    border: #535374 2px solid;
-    margin-bottom: 2px;
-    padding: 5px;
-    box-sizing: border-box;
-    overflow-wrap: break-word;
-}
+
 
 #chatBody {
     display: flex;
@@ -103,10 +95,24 @@ body {
     box-sizing: border-box;
 }
 
+#attachment {
+    display: none;
+}
+
 .chat-image {
     max-width: 100%;
-    height: auto; /* Keeps the aspect ratio visually */
+    height: auto; 
     display: block;
     border-radius: 8px;
     margin-top: 5px;
+}
+
+.message-bubble {
+    background-color: #444468;
+    border-radius: 5px;
+    border: #535374 2px solid;
+    margin-bottom: 2px;
+    padding: 5px;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
 }

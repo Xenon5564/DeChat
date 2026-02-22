@@ -54,13 +54,22 @@ function joinChat(name) {
 
     socket = io();
 
+    socket.on('join error', function(error) {
+        alert(error);
+        localStorage.removeItem('username');
+        socket.disconnect();
+        socket = null;
+    });
+
+    socket.on('join success', function() {
+        loginPage.style.display = 'none';
+        chatPage.style.display = 'block';
+    });
+
     socket.emit('join',{
         username: myUsername,
         firstJoined: parseInt(firstJoinTime)
     });
-    
-    loginPage.style.display = 'none';
-    chatPage.style.display = 'block';
 
     socket.on('chat history', function(history) {
         history.forEach(msg => {
@@ -109,7 +118,6 @@ function sendMessage(event) {
 sendButton.addEventListener('click', sendMessage);
 disconnectButton.addEventListener('click', function() {
     if (socket) {
-        socket.emit('chat message', { username: 'System', content: myUsername + ' has left the chat' });
         socket.disconnect();
         socket = null;
         loginPage.style.display = 'block';
