@@ -28,12 +28,14 @@
                     </div>
                 </div>
 
-                <label>Enter your message:</label>
-                <input type="text" id="content" name="message">
-                <input type="file" id="attachment" accept="image/*">
-                <button id="send">Send</button>
-                
-                <button id="disconnectButton">Disconnect</button>
+                <div id="inputContainer">
+                    <label>Enter your message:</label>
+                    <input type="text" id="content" name="message">
+                    <input type="file" id="attachment" accept="image/*">
+                    <button id="send">Send</button>
+                    <button id="disconnectButton">Disconnect</button>
+                </div>
+            </div>
             
             <script src="/socket.io/socket.io.js"></script>
             <script src="app.js"></script>

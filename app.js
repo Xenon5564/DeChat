@@ -29,8 +29,10 @@ function displayMessage(msg) {
         const img = document.createElement('img');
         img.src = msg.content;
         img.classList.add('chat-image');
-        img.classList.add
         item.appendChild(img);
+        img.onload = function() {
+            messageList.scrollTop = messageList.scrollHeight;
+        }
     }else {
         const textSpan = document.createElement('span');
         textSpan.textContent = msg.content;
@@ -142,63 +144,65 @@ usernameInput.addEventListener('keydown', function(event) {;
 });
 imageInput.addEventListener('change', function(event) {
     const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
+    if (!file) return;
 
-        reader.onload = function(e) {
-            
+    const reader = new FileReader();
 
-            if(file.type === 'image/gif') {
-                const msgObject = {
-                    username: myUsername,
-                    type: 'image',
-                    content: img.src
-                }
-                socket.emit('chat message', msgObject);
-                imageInput.value = '';
-                return;
-            }
-            else if (file.type.startsWith('image/')) {
-                const img = new Image();
-                img.src = e.target.result;
+    reader.onload = function(e) {
+        const rawData = e.target.result;
 
-                img.onload = function() {
-                    const maxSize = 800;
-                    let width = img.width;
-                    let height = img.height;
+        if (file.type === 'image/gif') {
+            const msgObject = {
+                username: myUsername,
+                type: 'image',
+                content: rawData
+            };
+            socket.emit('chat message', msgObject);
+            imageInput.value = '';
 
-                    if (width > maxSize || height > maxSize) {
-                        const aspectRatio = width / height;
-                        if (aspectRatio > 1) {
-                            width = maxSize;
-                            height = maxSize / aspectRatio;
-                        }
-                        else {
-                            height = maxSize;
-                            width = maxSize * aspectRatio;
-                        }
+        } else if (file.type.startsWith('image/')) {
+            const img = new Image();
+            img.src = rawData;
 
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        const resizedImage = canvas.toDataURL('image/jpeg', 0.7);
+            img.onload = function() {
+                const maxSize = 800;
+                let width = img.width;
+                let height = img.height;
 
-
-                        const msgObject = {
-                            username: myUsername,
-                            type: 'image',
-                            content: resizedImage
-                        }
-                        socket.emit('chat message', msgObject);
-                        imageInput.value = '';
+                if (width > maxSize || height > maxSize) {
+                    const aspectRatio = width / height;
+                    if (aspectRatio > 1) {
+                        width = maxSize;
+                        height = maxSize / aspectRatio;
+                    } else {
+                        height = maxSize;
+                        width = maxSize * aspectRatio;
                     }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const resizedImage = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    socket.emit('chat message', {
+                        username: myUsername,
+                        type: 'image',
+                        content: resizedImage
+                    });
+                } else {
+                    socket.emit('chat message', {
+                        username: myUsername,
+                        type: 'image',
+                        content: rawData
+                    });
                 }
-            reader.readAsDataURL(file);
-            }
+                imageInput.value = '';
+            };
         }
-    }
+    };
+    reader.readAsDataURL(file);
 });
 
 const savedName = localStorage.getItem('username');
