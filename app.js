@@ -1,18 +1,18 @@
 let socket;
 let myUsername;
 
+//Load sounds
 const notificationSound = new Audio('Sounds/Notification.wav');
 const userJoinedSound = new Audio('Sounds/UserConnected.wav');
 const userLeftSound = new Audio('Sounds/UserDisconnected.wav');
 
+//DOM elements
 const messageInput = document.getElementById('content');
 const usernameInput = document.getElementById('usernameInput');
 const imageInput = document.getElementById('attachment');
-
 const sendButton = document.getElementById('send');
 const loginButton = document.getElementById('loginButton');
 const disconnectButton = document.getElementById('disconnectButton');
-
 const messageList = document.getElementById('messageList');
 const loginPage = document.getElementById('loginPage');
 const chatPage = document.getElementById('chatPage');
@@ -20,7 +20,6 @@ const chatPage = document.getElementById('chatPage');
 function displayMessage(msg) {
     const item = document.createElement('div');
     item.classList.add('message-bubble');
-
     const nameSpan = document.createElement('strong');
     nameSpan.textContent = msg.username + ': ';
     item.appendChild(nameSpan);
@@ -33,19 +32,19 @@ function displayMessage(msg) {
         img.onload = function() {
             messageList.scrollTop = messageList.scrollHeight;
         }
-    }else {
+    } else {
         const textSpan = document.createElement('span');
         textSpan.textContent = msg.content;
         item.appendChild(textSpan);
     }
-
     messageList.appendChild(item);
     messageList.scrollTop = messageList.scrollHeight;
 }
 
 function joinChat(name) {
     myUsername = name;
-    
+    const myPublicKey = localStorage.getItem('publicKey');
+
     let firstJoinTime = localStorage.getItem('joinTime');
     if(!firstJoinTime) {
         firstJoinTime = Date.now();
@@ -53,30 +52,26 @@ function joinChat(name) {
     }
 
     socket = io();
-
     socket.on('join error', function(error) {
         alert(error);
         localStorage.removeItem('username');
         socket.disconnect();
         socket = null;
     });
-
     socket.on('join success', function() {
         loginPage.style.display = 'none';
         chatPage.style.display = 'block';
     });
-
     socket.emit('join',{
         username: myUsername,
-        firstJoined: parseInt(firstJoinTime)
+        firstJoined: parseInt(firstJoinTime),
+        publicKey: myPublicKey
     });
-
     socket.on('chat history', function(history) {
         history.forEach(msg => {
             displayMessage(msg)
         });
     });
-
     socket.on('chat message', function(msg) {
         displayMessage(msg);
         if(msg.username !== myUsername) {
@@ -91,13 +86,12 @@ function joinChat(name) {
             }
         }
     });
-
     socket.on('user list', function(users) {
         const userList = document.getElementById('userList');
         userList.innerHTML = '';
         users.forEach(user => {
             const li = document.createElement('li');
-            li.textContent = user;
+            li.textContent = `${user.username}#${user.tag}`;
             userList.appendChild(li);
         });
     });
@@ -118,6 +112,7 @@ function sendMessage(event) {
 sendButton.addEventListener('click', sendMessage);
 disconnectButton.addEventListener('click', function() {
     if (socket) {
+        messageList.innerHTML = '';
         socket.disconnect();
         socket = null;
         loginPage.style.display = 'block';
@@ -213,8 +208,12 @@ imageInput.addEventListener('change', function(event) {
     reader.readAsDataURL(file);
 });
 
-const savedName = localStorage.getItem('username');
-if (savedName) {
-    joinChat(savedName);
-}
+(async function initApp() {
+    await Identity.loadOrCreate();
+    console.log('Identity ready, you can now join the chat');
 
+    const savedName = localStorage.getItem('username');
+    if (savedName) {
+        joinChat(savedName);
+    }
+})();
