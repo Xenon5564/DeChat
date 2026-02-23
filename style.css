@@ -21,6 +21,19 @@ body {
     align-items: stretch;
     width: 100%;
 }
+#dmList {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+#dmList li {
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+#dmList li:hover {
+    background-color: #353545;
+}
 
 /* Style for containers */
 #container {
@@ -51,12 +64,33 @@ body {
     padding: 10px;
     box-sizing: border-box;
 }
+#roomListContainer {
+    width: 200px;
+    background-color: #444468; 
+    border-radius: 5px;
+    border: #535374 2px solid;
+    padding: 10px;
+    margin-right: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; 
+}
+#inputContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 10px;
+    margin-left: 32vh;
+}
 
 /* Style for input fields */
 #usernameInput, #content {
-    width: 200px;
+    width: 25%;
     padding: 10px;
     margin-top: 10px;
+    margin-right: 10px;
+    margin-left: 5px;
     border: none;
     border-radius: 5px;
 }
@@ -69,19 +103,42 @@ body {
 
 /* Style for buttons */
 #loginButton, #send, #disconnectButton, #attachmentButton{
-    padding: 10px 20px;
+    padding: 11px 20px;
     margin-top: 10px;
+    margin-right: 10px;
     border: none;
     border-radius: 5px;
     background-color: #4CAF50;
     color: white;
     cursor: pointer;
 }
+#attachmentButton {
+    padding: 8px 20px;
+    background-color: #2196F3;
+}
+#disconnectButton {
+    margin-left: 20vh;
+    background-color: #f44336;
+}
+.room-btn {
+    background-color: transparent;
+    border: none;
+    color: #f0f0f0;
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: background 0.2s;
+    width: 100%;
+}
+.room-btn.active {
+    background-color: #353545;
+    color: white;
+    font-weight: bold;
+}
 #loginButton:hover, #send:hover {
     background-color: #45a049;
-}
-#disconnectButton:hover {
-    background-color: #d9534f;
 }
 
 /*Style for classes*/

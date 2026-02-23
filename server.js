@@ -1,9 +1,15 @@
 const { Server } = require('socket.io');
 const express = require('express');
-const http = require('http');
-
+const https = require('https');
+const fs = require('fs');
 const app = express();
-const server = http.createServer(app);
+
+const options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem')
+};
+
+const server = https.createServer(options, app);
 const io = new Server(server);
 
 let chatHistory = [];
@@ -84,5 +90,5 @@ io.on ('connection', (socket) => {
 });
 
 server.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+    console.log('Server is running on https://localhost:3000');
 });
