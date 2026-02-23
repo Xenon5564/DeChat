@@ -1,5 +1,8 @@
 let socket;
 let myUsername;
+let globalUserList = [];
+let currentRoom = 'global';
+let dmHistories = {};
 
 //Load sounds
 const notificationSound = new Audio('Sounds/Notification.wav');
@@ -26,11 +29,99 @@ const declineDmButton = document.getElementById('declineDm');
 let pendingDmSender = null;
 let pendingDmKey = null;
 
+function renderUserList() {
+    const userList = document.getElementById('userList');
+    userList.innerHTML = '';
+
+    if (currentRoom === 'global') {
+        globalUsersList.forEach(user => {
+            const li = document.createElement('li');
+            
+            if (typeof user === 'object') {
+                li.textContent = `${user.username}#${user.tag}`;
+            } else {
+                li.textContent = user;
+            }
+            
+            userList.appendChild(li);
+        });
+    } 
+    else {
+        const targetLi = document.createElement('li');
+        targetLi.textContent = currentRoom;
+        userList.appendChild(targetLi);
+
+        const myLi = document.createElement('li');
+        
+        const myData = globalUsersList.find(u => u.username === myUsername);
+        
+        if (myData && typeof myData === 'object') {
+            myLi.textContent = `${myData.username}#${myData.tag} (You)`;
+        } else {
+            myLi.textContent = `${myUsername} (You)`;
+        }
+        
+        userList.appendChild(myLi);
+    }
+}
+
+function switchRoom(targetRoom) {
+    currentRoom = targetRoom;
+
+    document.querySelectorAll('.room-btn, #dmList li').forEach(el => {
+        el.classList.remove('active');
+    });
+
+    if (targetRoom === 'global') {
+        globalChatButton.classList.add('active');
+    } else {
+        const dmItem = document.getElementById(`dm-btn-${targetRoom}`);
+        if (dmItem) dmItem.classList.add('active');
+    }
+
+    messageList.innerHTML = '';
+
+    if (targetRoom === 'global') {
+        socket.emit('request chat history');
+    } else {
+        const history = dmHistories[targetRoom] || [];
+        history.forEach(msg => displayMessage(msg));
+    }
+
+    renderUserList();
+}
+
+function routeMessage(msgObject) {
+    msgObject.timestamp = Date.now();
+
+    if (currentRoom === 'global') {
+        if (socket) {
+            socket.emit('chat message', msgObject);
+        }
+    } else {
+        const channel = peers[currentRoom].dataChannel;
+        if (channel && channel.readyState === 'open') {
+            channel.send(JSON.stringify(msgObject));
+            
+            displayMessage(msgObject);
+            dmHistories[currentRoom].push(msgObject);
+        } else {
+            console.log("Error: Data channel is not open yet.");
+        }
+    }
+}
+
 function displayMessage(msg) {
     const item = document.createElement('div');
     item.classList.add('message-bubble');
     const nameSpan = document.createElement('strong');
-    nameSpan.textContent = msg.username + ': ';
+    const timeSpan = document.createElement('span');
+    timeSpan.classList.add('timestamp');
+    const date = new Date(msg.timestamp);
+    const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false});
+    timeSpan.textContent = ` [${timeString}]`;
+    nameSpan.textContent = ' ' + msg.username + ': ';
+    item.appendChild(timeSpan);
     item.appendChild(nameSpan);
 
     if (msg.type === 'image') {
@@ -82,27 +173,24 @@ function joinChat(name) {
         });
     });
     socket.on('chat message', function(msg) {
-        displayMessage(msg);
-        if(msg.username !== myUsername) {
-            notificationSound.play();
-            if(msg.username === 'System') {
-                if(msg.content.includes('joined')) {
-                    userJoinedSound.play();
-                }
-                else if(msg.content.includes('left')) {
-                    userLeftSound.play();
+        if (currentRoom === 'global') {
+            displayMessage(msg);
+            if(msg.username !== myUsername) {
+                notificationSound.play();
+                if(msg.username === 'System') {
+                    if(msg.content.includes('joined')) {
+                        userJoinedSound.play();
+                    }
+                    else if(msg.content.includes('left')) {
+                        userLeftSound.play();
+                    }
                 }
             }
-        }
+        } 
     });
     socket.on('user list', function(users) {
-        const userList = document.getElementById('userList');
-        userList.innerHTML = '';
-        users.forEach(user => {
-            const li = document.createElement('li');
-            li.textContent = `${user.username}#${user.tag}`;
-            userList.appendChild(li);
-        });
+        globalUsersList = users;
+        renderUserList(users);
     });
     socket.on('dm request', function(data) {
         pendingDmSender = data.from;
@@ -112,24 +200,57 @@ function joinChat(name) {
         dmNotification.style.display = 'block';
         dmRequestSound.play();
     });
-    socket.on('dm response', function(data) {
+    socket.on('dm response', async function(data) {
         if (data.accepted) {
             alert(`User ${data.from} accepted your DM request!.`);
-            // DM Logic
+            
+            const pc = createPeerConnection(data.from, true);
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            socket.emit('signal', {
+                to: data.from,
+                signal: { type: 'offer', sdp: offer }
+            });
         } else {
             alert(`User ${data.from} declined your DM request.`);
+        }
+    });
+    socket.on('signal', async function(data) {
+        const targetHandle = data.from;
+        const signal = data.signal;
+
+        const peerObj = peers[targetHandle];
+        if (!peerObj) return;
+
+        const pc = peerObj.connection;
+
+        if (signal.type === 'offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+            const anwser = await pc.createAnswer();
+            await pc.setLocalDescription(anwser);
+
+            socket.emit('signal', {
+                to: targetHandle,
+                signal: { type: 'answer', sdp: anwser }
+            });
+        } else if (signal.type === 'answer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+        } else if (signal.type === 'candidate') {
+            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
         }
     });
 }
 
 function sendMessage(event) {
     const text = messageInput.value.trim();
-    if (text !== '' && socket) {
+    if (text !== '') {
         const msgObject = {
             username: myUsername,
+            type: 'text',
             content: text
         };
-        socket.emit('chat message', msgObject);
+        routeMessage(msgObject);
         messageInput.value = '';
     }
 }
@@ -161,9 +282,7 @@ loginButton.addEventListener('click', function() {
     }
 });
 globalChatButton.addEventListener('click', function() {
-    document.querySelectorAll('.room-btn').forEach(btn => btn.classList.remove('active'));
-    globalChatButton.classList.add('active');
-    console.log('Switched to global chat');
+    switchRoom('global');
 });
 declineDmButton.addEventListener('click', function() {
     if (pendingDmSender) {
@@ -182,9 +301,9 @@ acceptDmButton.addEventListener('click', function() {
             to: pendingDmSender,
             accepted: true
         });
+        
+        createPeerConnection(pendingDmSender, false);
         dmNotification.style.display = 'none';
-        // DM Logic - Open DM window, initialize encryption, etc.
-        console.log("Starting DM with" + pendingDmSender);
     }
 });
 
@@ -213,7 +332,7 @@ imageInput.addEventListener('change', function(event) {
                 type: 'image',
                 content: rawData
             };
-            socket.emit('chat message', msgObject);
+            routeMessage(msgObject);
             imageInput.value = '';
 
         } else if (file.type.startsWith('image/')) {
@@ -241,18 +360,20 @@ imageInput.addEventListener('change', function(event) {
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     const resizedImage = canvas.toDataURL('image/jpeg', 0.7);
-                    
-                    socket.emit('chat message', {
+
+                    const msgObject = {
                         username: myUsername,
                         type: 'image',
                         content: resizedImage
-                    });
+                    };
+                    routeMessage(msgObject);
                 } else {
-                    socket.emit('chat message', {
+                    const msgObject = {
                         username: myUsername,
                         type: 'image',
                         content: rawData
-                    });
+                    };
+                    routeMessage(msgObject);
                 }
                 imageInput.value = '';
             };
@@ -260,6 +381,7 @@ imageInput.addEventListener('change', function(event) {
     };
     reader.readAsDataURL(file);
 });
+
 
 (async function initApp() {
     await Identity.loadOrCreate();

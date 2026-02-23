@@ -97,6 +97,7 @@ io.on ('connection', (socket) => {
         console.log(`${socket.username}#${socket.tag} joined the chat`);
         const connectMessage = { 
             username: 'System', 
+            timestamp: Date.now(),
             content: `${socket.username}#${socket.tag} has joined the chat` 
         };
         chatHistory.push(connectMessage);
@@ -134,6 +135,7 @@ io.on ('connection', (socket) => {
 
             const disconnectMessage = { 
                 username: 'System', 
+                timestamp: Date.now(),
                 content: `${socket.username}#${socket.tag} has left the chat` 
             };
             chatHistory.push(disconnectMessage);
@@ -151,6 +153,21 @@ io.on ('connection', (socket) => {
                 publicKey: socket.publicKey
             });
         }
+    });
+    socket.on('signal', (data) => {
+        const targetSocketId = getSocketIdByHandle(data.to);
+        const senderHandle = `${socket.username}#${socket.tag}`;
+
+        if (targetSocketId) {
+            console.log('Relay signal from', senderHandle, 'to', data.to);
+            io.to(targetSocketId).emit('signal', {
+                from: senderHandle,
+                signal: data.signal
+            });
+        }
+    });
+    socket.on('request chat history', () => {
+        socket.emit('chat history', chatHistory);
     });
 });
 

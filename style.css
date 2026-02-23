@@ -158,6 +158,12 @@ body {
     box-sizing: border-box;
     overflow-wrap: break-word;
 }
+.timestamp {
+    padding-bottom: 0.1em;
+    font-size: 0.8em;
+    color: #888;
+    margin-top: 5px;
+}
 
 /* Style for DM notifs */
 #dmNotif {
