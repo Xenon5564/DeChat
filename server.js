@@ -2,6 +2,7 @@ const { Server } = require('socket.io');
 const express = require('express');
 const https = require('https');
 const fs = require('fs');
+const { send } = require('process');
 const app = express();
 
 const options = {
@@ -17,6 +18,38 @@ let onlineUsers = {};
 
 app.use(express.static(__dirname));
 
+const commands = {
+    'direct': (socket, args) => {
+        const senderHandle = `${socket.username}#${socket.tag}`;
+        const targetHandle = args[0];
+
+        if (!targetHandle) {
+            socket.emit('chat message', { username: 'System', content: 'Usage: /Direct <username#tag>' });
+            return;
+        }
+
+        if (targetHandle === senderHandle) {
+            socket.emit('chat message', { username: 'System', content: 'You cannot DM yourself!' });
+            return;
+        }
+
+        const targetSocketId = getSocketIdByHandle(targetHandle);
+        if (targetSocketId) {
+
+            console.log('DM Request:', senderHandle, '->', targetHandle);
+
+             io.to(targetSocketId).emit('dm request', { 
+                from: senderHandle, 
+                publicKey: socket.publicKey
+            });
+
+            socket.emit('chat message', { username: 'System', content: `DM request sent to ${targetHandle}` });
+        } else {
+            socket.emit('chat message', { username: 'System', content: `User ${targetHandle} not found` });
+        }
+    }
+}
+
 function generateTag(keyString) {
     if(!keyString) return '0000';
      
@@ -27,6 +60,17 @@ function generateTag(keyString) {
     }
 
     return Math.abs(hash).toString(16).substring(0, 4).toUpperCase();
+}
+function getSocketIdByHandle(handle) {
+    const sockets = Object.keys(onlineUsers);
+    for (let socketID of sockets) {
+        const user = onlineUsers[socketID];
+        const userHandle = `${user.username}#${user.tag}`;
+        if (userHandle === handle) {
+            return socketID;
+        }
+    }
+    return null;
 }
 
 io.on ('connection', (socket) => {
@@ -63,15 +107,24 @@ io.on ('connection', (socket) => {
         const filteredHistory = chatHistory.filter(msg => msg.timestamp >= data.firstJoined);
         socket.emit('chat history', filteredHistory);
     });
-
     socket.on('chat message', (msg) => {
-        const fullHandle = `${socket.username}#${socket.tag}`;
-        msg.username = fullHandle;
-        msg.timestamp = Date.now();
-        chatHistory.push(msg);
-        io.emit('chat message', msg);
-    });
+        if (msg.content.startsWith('/')) {
+            const args = msg.content.slice(1).trim().split(' ');
+            const command = args.shift();
 
+            if (commands[command]) {
+                commands[command](socket, args);
+            } else {
+                socket.emit('chat message', { username: 'System', content: `Unknown command: ${command}` });
+            }
+        } else {
+            msg.timestamp = Date.now();
+            const fullHandle = `${socket.username}#${socket.tag}`;
+            msg.username = fullHandle;
+            chatHistory.push(msg);
+            io.emit('chat message', msg);
+        }
+    });
     socket.on('disconnect', () => {
         if (socket.username) {
             console.log(`${socket.username}#${socket.tag} disconnected`);
@@ -85,6 +138,18 @@ io.on ('connection', (socket) => {
             };
             chatHistory.push(disconnectMessage);
             io.emit('chat message', disconnectMessage);
+        }
+    });
+    socket.on('dm response', (data) => {
+        const targetSocketId = getSocketIdByHandle(data.to);
+        const senderHandle = `${socket.username}#${socket.tag}`;
+
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('dm response', {
+                from: senderHandle,
+                accepted: data.accepted,
+                publicKey: socket.publicKey
+            });
         }
     });
 });

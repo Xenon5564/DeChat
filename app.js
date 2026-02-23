@@ -5,6 +5,7 @@ let myUsername;
 const notificationSound = new Audio('Sounds/Notification.wav');
 const userJoinedSound = new Audio('Sounds/UserConnected.wav');
 const userLeftSound = new Audio('Sounds/UserDisconnected.wav');
+const dmRequestSound = new Audio('Sounds/DMRequest.wav');
 
 //DOM elements
 const messageInput = document.getElementById('content');
@@ -16,6 +17,14 @@ const disconnectButton = document.getElementById('disconnectButton');
 const messageList = document.getElementById('messageList');
 const loginPage = document.getElementById('loginPage');
 const chatPage = document.getElementById('chatPage');
+const globalChatButton = document.getElementById('globalChatButton');
+const dmNotification = document.getElementById('dmNotif');
+const dmRequestText = document.getElementById('dmRequestText');
+const acceptDmButton = document.getElementById('acceptDm');
+const declineDmButton = document.getElementById('declineDm');
+
+let pendingDmSender = null;
+let pendingDmKey = null;
 
 function displayMessage(msg) {
     const item = document.createElement('div');
@@ -95,6 +104,22 @@ function joinChat(name) {
             userList.appendChild(li);
         });
     });
+    socket.on('dm request', function(data) {
+        pendingDmSender = data.from;
+        pendingDmKey = data.publicKey;
+
+        dmRequestText.textContent = `${pendingDmSender} wants to start a private chat with you.`;
+        dmNotification.style.display = 'block';
+        dmRequestSound.play();
+    });
+    socket.on('dm response', function(data) {
+        if (data.accepted) {
+            alert(`User ${data.from} accepted your DM request!.`);
+            // DM Logic
+        } else {
+            alert(`User ${data.from} declined your DM request.`);
+        }
+    });
 }
 
 function sendMessage(event) {
@@ -135,6 +160,34 @@ loginButton.addEventListener('click', function() {
         alert('Please enter a username');
     }
 });
+globalChatButton.addEventListener('click', function() {
+    document.querySelectorAll('.room-btn').forEach(btn => btn.classList.remove('active'));
+    globalChatButton.classList.add('active');
+    console.log('Switched to global chat');
+});
+declineDmButton.addEventListener('click', function() {
+    if (pendingDmSender) {
+        socket.emit('dm response', {
+            to: pendingDmSender,
+            accepted: false
+        });
+        dmNotification.style.display = 'none';
+        pendingDmSender = null;
+        console.log("Declined DM request from " + pendingDmSender);
+    }
+});
+acceptDmButton.addEventListener('click', function() {
+    if (pendingDmSender) {
+        socket.emit('dm response', {
+            to: pendingDmSender,
+            accepted: true
+        });
+        dmNotification.style.display = 'none';
+        // DM Logic - Open DM window, initialize encryption, etc.
+        console.log("Starting DM with" + pendingDmSender);
+    }
+});
+
 messageInput.addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
         sendMessage(event);
