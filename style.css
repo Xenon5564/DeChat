@@ -137,6 +137,14 @@ body {
     color: white;
     font-weight: bold;
 }
+.room-btn.unread {
+    color: #ff4444;
+    font-weight: bold;
+}
+.room-btn.unread::after{
+    content:" 🔴";
+    font-size: 0.8em;
+}
 #loginButton:hover, #send:hover {
     background-color: #45a049;
 }

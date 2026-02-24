@@ -1,4 +1,6 @@
 const { Server } = require('socket.io');
+const { webcrypto } = require('node:crypto');
+const { subtle } = webcrypto;
 const express = require('express');
 const https = require('https');
 const fs = require('fs');
@@ -11,7 +13,9 @@ const options = {
 };
 
 const server = https.createServer(options, app);
-const io = new Server(server);
+const io = new Server(server, {
+    maxHttpBufferSize: 10485760
+});
 
 let chatHistory = [];
 let onlineUsers = {};
@@ -35,10 +39,7 @@ const commands = {
 
         const targetSocketId = getSocketIdByHandle(targetHandle);
         if (targetSocketId) {
-
-            console.log('DM Request:', senderHandle, '->', targetHandle);
-
-             io.to(targetSocketId).emit('dm request', { 
+             io.to(targetSocketId).emit('dm request', {
                 from: senderHandle, 
                 publicKey: socket.publicKey
             });
@@ -108,22 +109,46 @@ io.on ('connection', (socket) => {
         const filteredHistory = chatHistory.filter(msg => msg.timestamp >= data.firstJoined);
         socket.emit('chat history', filteredHistory);
     });
-    socket.on('chat message', (msg) => {
-        if (msg.content.startsWith('/')) {
-            const args = msg.content.slice(1).trim().split(' ');
-            const command = args.shift();
+    socket.on('chat message', async (msg) => {
+        try {
+            const user = onlineUsers[socket.id];
+            if (!user || !user.publicKey) return;
 
-            if (commands[command]) {
-                commands[command](socket, args);
+            const publicKeyObject = await importUserPublicKey(user.publicKey);
+            const encoder = new TextEncoder();
+            const contentBytes = encoder.encode(msg.content);
+            const signatureBytes = Buffer.from(msg.signature, 'base64');
+
+            const isValid = await subtle.verify(
+                { name: "RSA-PSS", saltLength: 32 },
+                publicKeyObject,
+                signatureBytes,
+                contentBytes
+            );
+
+            if (isValid) {
+                if (msg.content.startsWith('/')) {
+                const args = msg.content.slice(1).trim().split(' ');
+                const command = args.shift();
+
+                if (commands[command]) {
+                    commands[command](socket, args);
+                } else {
+                    socket.emit('chat message', { username: 'System', content: `Unknown command: ${command}` });
+                }
+                } else {
+                    msg.timestamp = Date.now();
+                    const fullHandle = `${socket.username}#${socket.tag}`;
+                    msg.username = fullHandle;
+                    chatHistory.push(msg);
+                    io.emit('chat message', msg);
+                }
             } else {
-                socket.emit('chat message', { username: 'System', content: `Unknown command: ${command}` });
+                console.warn(`Tampered message was detected from ${socket.username}#${socket.tag}`);
+                socket.emit('chat message', { username: 'System', content: 'Message signature verification failed. Your message was not sent.' });
             }
-        } else {
-            msg.timestamp = Date.now();
-            const fullHandle = `${socket.username}#${socket.tag}`;
-            msg.username = fullHandle;
-            chatHistory.push(msg);
-            io.emit('chat message', msg);
+        } catch (error) {
+            console.error('Verification error:', error);
         }
     });
     socket.on('disconnect', () => {
@@ -159,7 +184,6 @@ io.on ('connection', (socket) => {
         const senderHandle = `${socket.username}#${socket.tag}`;
 
         if (targetSocketId) {
-            console.log('Relay signal from', senderHandle, 'to', data.to);
             io.to(targetSocketId).emit('signal', {
                 from: senderHandle,
                 signal: data.signal
@@ -170,6 +194,20 @@ io.on ('connection', (socket) => {
         socket.emit('chat history', chatHistory);
     });
 });
+
+async function importUserPublicKey(jwk) {
+    const keyData = JSON.parse(jwk);
+    return await subtle.importKey(
+        "jwk",
+        keyData,
+        {
+            name: "RSA-PSS",
+            hash: "SHA-256"
+        },
+        true,
+        ["verify"]
+    );
+}
 
 server.listen(3000, () => {
     console.log('Server is running on https://localhost:3000');

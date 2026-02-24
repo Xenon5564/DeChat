@@ -6,14 +6,15 @@ const rtcConfig = {
     ]
 };
 
-function createPeerConnection(targetHandle, initiator) {
+function createPeerConnection(targetHandle, initiator, remoteKeyString) {
     console.log("Createing RTC peer connection with", targetHandle);
     
     const pc = new RTCPeerConnection(rtcConfig);
 
     peers[targetHandle] = {
         connection: pc,
-        dataChannel: null
+        dataChannel: null,
+        remotePublicKey: remoteKeyString
     };
 
     pc.onicecandidate = (event) => {
@@ -49,6 +50,7 @@ function setupDataChannel(channel, targetHandle) {
         }
 
         const listItem = document.createElement('li');
+        listItem.classList.add('room-btn');
         listItem.textContent = targetHandle;
         listItem.id = `dm-btn-${targetHandle}`;
 
@@ -58,15 +60,30 @@ function setupDataChannel(channel, targetHandle) {
 
         document.getElementById('dmList').appendChild(listItem);
     };
-    channel.onmessage = (event) => {
-       const msgObject = JSON.parse(event.data);
+    channel.onmessage = async (event) => {
+        const msgObject = JSON.parse(event.data);
+        const peerData = peers[targetHandle];
 
-       dmHistories[targetHandle].push(msgObject);
-        if (currentRoom === targetHandle) {
-            displayMessage(msgObject);
-        } else {
-            console.log('Received a BG DM from', targetHandle);
-            notificationSound.play();
+        try {
+            const publicKeyObject = await Identity.importKey(peerData.remotePublicKey, 'verify');
+            const isValid = await Identity.verify(msgObject.content, msgObject.signature, publicKeyObject);
+
+            if (isValid) {
+                dmHistories[targetHandle].push(msgObject);
+                if (currentRoom === targetHandle) {
+                    displayMessage(msgObject);
+                    } else {
+                        const btn = document.getElementById(`dm-btn-${targetHandle}`);
+                        if (btn) btn.classList.add('unread');
+                    }
+
+                    notificationSound.currentTime = 0;
+                    notificationSound.play();
+            } else {
+                console.warn('Invalid signature for message from', targetHandle);
+            }
+        } catch (error) {
+            console.error('Error verifying message from', targetHandle, error);
         }
     };
 }
