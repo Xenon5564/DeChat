@@ -344,72 +344,45 @@ usernameInput.addEventListener('keydown', function(event) {;
         loginButton.click();
     }
 });
-imageInput.addEventListener('change', function(event) {
+imageInput.addEventListener('change', async function(event) {
     const file = event.target.files[0];
     if (!file) return;
-    if (file.size >= 10485760) {
-        alert('File too big! Max. 10MB');
+
+    if (file.size > 50 * 1024 * 1024) {
+        alert("File is too large! Maximum size is 50MB.");
+        imageInput.value = ''; // Reset input
         return;
     }
-    const reader = new FileReader();
 
-    reader.onload = function(e) {
-        const rawData = e.target.result;
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
 
-        if (file.type === 'image/gif') {
-            const msgObject = {
-                username: myUsername,
-                type: 'image',
-                content: rawData
-            };
-            routeMessage(msgObject);
-            imageInput.value = '';
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
 
-        } else if (file.type.startsWith('image/')) {
-            const img = new Image();
-            img.src = rawData;
-
-            img.onload = function() {
-                const maxSize = 800;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > maxSize || height > maxSize) {
-                    const aspectRatio = width / height;
-                    if (aspectRatio > 1) {
-                        width = maxSize;
-                        height = maxSize / aspectRatio;
-                    } else {
-                        height = maxSize;
-                        width = maxSize * aspectRatio;
-                    }
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    const resizedImage = canvas.toDataURL('image/jpeg', 0.7);
-
-                    const msgObject = {
-                        username: myUsername,
-                        type: 'image',
-                        content: resizedImage
-                    };
-                    routeMessage(msgObject);
-                } else {
-                    const msgObject = {
-                        username: myUsername,
-                        type: 'image',
-                        content: rawData
-                    };
-                    routeMessage(msgObject);
-                }
-                imageInput.value = '';
-            };
+        if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`)
         }
-    };
-    reader.readAsDataURL(file);
+
+        const result = await response.json();
+
+        const msgObject = {
+            username: myUsername,
+            type: 'image',
+            timestamp: Date.now(),
+            content: result.url
+        };
+
+        routeMessage(msgObject);
+    } catch (error) {
+        console.error("Error uploading image:", error);
+        alert("Failed to upload image. Check console for details.");
+    } finally {
+        imageInput.value = '';
+    }
 });
 
 

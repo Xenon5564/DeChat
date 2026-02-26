@@ -3,6 +3,7 @@ const { webcrypto } = require('node:crypto');
 const { subtle } = webcrypto;
 const express = require('express');
 const https = require('https');
+const multer = require('multer');
 const fs = require('fs');
 const { send } = require('process');
 const app = express();
@@ -21,6 +22,7 @@ let chatHistory = [];
 let onlineUsers = {};
 
 app.use(express.static(__dirname));
+app.use('/uploads', express.static('uploads'));
 
 const commands = {
     'direct': (socket, args) => {
@@ -74,6 +76,30 @@ function getSocketIdByHandle(handle) {
     return null;
 }
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/')
+    },
+    filename: function (req, file, cb) {
+        const sufix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, sufix + '-' + file.originalname);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 100 * 1024 * 1024}
+});
+
+app.post('/upload', upload.single('file'), (req, res) => {
+    if(!req.file) {
+        return res.status(400).send('No file uploaded.');
+    }
+
+    const fileUrl = '/uploads/' + req.file.filename;
+    res.json({ url: fileUrl});
+});
+
 io.on ('connection', (socket) => {
     socket.on('join', (data) => {
         const activeUsers = Object.values(onlineUsers);
@@ -101,13 +127,12 @@ io.on ('connection', (socket) => {
             timestamp: Date.now(),
             content: `${socket.username}#${socket.tag} has joined the chat` 
         };
-        chatHistory.push(connectMessage);
         
         io.emit('chat message', connectMessage);
         io.emit('user list', Object.values(onlineUsers));
         
-        const filteredHistory = chatHistory.filter(msg => msg.timestamp >= data.firstJoined);
-        socket.emit('chat history', filteredHistory);
+        //const filteredHistory = chatHistory.filter(msg => msg.timestamp >= data.firstJoined);
+        socket.emit('chat history', chatHistory);
     });
     socket.on('chat message', async (msg) => {
         try {
@@ -127,7 +152,7 @@ io.on ('connection', (socket) => {
             );
 
             if (isValid) {
-                if (msg.content.startsWith('/')) {
+                if (msg.type === 'text' && msg.content.startsWith('/')) {
                 const args = msg.content.slice(1).trim().split(' ');
                 const command = args.shift();
 
@@ -140,7 +165,7 @@ io.on ('connection', (socket) => {
                     msg.timestamp = Date.now();
                     const fullHandle = `${socket.username}#${socket.tag}`;
                     msg.username = fullHandle;
-                    chatHistory.push(msg);
+                    if (msg.username !== 'System') chatHistory.push(msg);
                     io.emit('chat message', msg);
                 }
             } else {
@@ -163,7 +188,6 @@ io.on ('connection', (socket) => {
                 timestamp: Date.now(),
                 content: `${socket.username}#${socket.tag} has left the chat` 
             };
-            chatHistory.push(disconnectMessage);
             io.emit('chat message', disconnectMessage);
         }
     });

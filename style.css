@@ -152,7 +152,10 @@ body {
 /*Style for classes*/
 .chat-image {
     max-width: 100%;
-    height: auto; 
+    max-height: 800px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
     display: block;
     border-radius: 8px;
     margin-top: 5px;
