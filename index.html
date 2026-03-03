@@ -21,12 +21,8 @@
                     <div id="roomListContainer">
                         <h3>Rooms:</h3>
                         <button id="globalChatButton" class="room-btn active">Global Chat</button>
-                        
-                        <h4>Private Chats:</h4>
-                        <ul id="dmList"> 
-                            <li></li>
-                        </ul>
                     </div>
+
                     <div id="messageContainer">
                         <div id="messageList"></div>
                     </div>
@@ -46,23 +42,9 @@
                     <button id="disconnectButton">Disconnect</button>
                 </div>
             </div>
-            
-            
-        </div>
-
-        <div id="dmNotif" style="display: none;">
-            <h3>DM Request</h3>
-            <p id="dmRequestText"></p>
-            <div class="button-row">
-                <button id="acceptDm">Accept</button>
-                <button id="declineDm">Decline</button>
-            </div>
         </div>
 
         <script src="/socket.io/socket.io.js"></script>
-        <script src="identity.js"></script>
-        <script src="webrtc.js"></script>
-        <script src="app.js"></script>
-
+        <script type="module" src="app.js"></script>
     </body>
 </html>

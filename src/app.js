@@ -1,48 +1,53 @@
-import { Identity } from './identity.js';
+import { Identity } from './identity.js'
 
 let socket;
 let myUsername;
-let globalUsersList = [];
+let globalUserList = [];
 let currentRoom = 'global';
+let dmHistories = {};
 
-//Load sounds
-const notificationSound = new Audio('Sounds/Notification.wav');
-const userJoinedSound = new Audio('Sounds/UserConnected.wav');
-const userLeftSound = new Audio('Sounds/UserDisconnected.wav');
+function switchRoom(targetRoom) {
+    currentRoom = targetRoom;
 
-//DOM elements
-const messageInput = document.getElementById('content');
-const usernameInput = document.getElementById('usernameInput');
-const imageInput = document.getElementById('attachment');
-const sendButton = document.getElementById('send');
-const loginButton = document.getElementById('loginButton');
-const disconnectButton = document.getElementById('disconnectButton');
-const messageList = document.getElementById('messageList');
-const loginPage = document.getElementById('loginPage');
-const chatPage = document.getElementById('chatPage');
-const globalChatButton = document.getElementById('globalChatButton');
-
-function renderUserList() {
-    const userList = document.getElementById('userList');
-    userList.innerHTML = '';
-    const myKey = localStorage.getItem('publicKey');
-
-    globalUsersList.forEach(user => {
-        const li = document.createElement('li');
-
-        if (typeof user === 'object') {
-            let displayName = `${user.username}#${user.tag}`;
-            if (user.publicKey === myKey) {
-                displayName += " (You)";
-            }
-            
-            li.textContent = displayName;
-        } else {
-            li.textContent = user;
-        }
-        
-        userList.appendChild(li);
+    document.querySelectorAll('.room-btn, #dmList li').forEach(el => {
+        el.classList.remove('active');
     });
+
+    if (targetRoom === 'global') {
+        globalChatButton.classList.add('active');
+    } else {
+        const dmItem = document.getElementById(`dm-btn-${targetRoom}`);
+        if (dmItem) dmItem.classList.add('active');
+    }
+
+    messageList.innerHTML = '';
+    let activeBtn;
+
+    if (targetRoom === 'global') {
+        activeBtn = globalChatButton;
+    } else {
+        const history = dmHistories[targetRoom] || [];
+        history.forEach(msg => displayMessage(msg));
+        activeBtn = document.getElementById(`dm-btn-${targetRoom}`);
+    }
+
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.classList.remove('unread');
+    }
+
+    renderUserList();
+}
+
+async function routeMessage(msgObject) {
+    msgObject.timestamp = Date.now();
+    
+    const sig = await Identity.sign(msgObject.content);
+    msgObject.signature = sig;
+    if (socket) {
+            ocket.emit('chat message', msgObject);
+    }
+    
 }
 
 function displayMessage(msg) {
@@ -75,17 +80,6 @@ function displayMessage(msg) {
     messageList.scrollTop = messageList.scrollHeight;
 }
 
-async function routeMessage(msgObject) {
-    msgObject.timestamp = Date.now();
-    
-    const sig = await Identity.sign(msgObject.content);
-    msgObject.signature = sig;
-
-    if (socket) {
-        socket.emit('chat message', msgObject);
-    }
-}
-
 function joinChat(name) {
     myUsername = name;
     const myPublicKey = localStorage.getItem('publicKey');
@@ -113,13 +107,16 @@ function joinChat(name) {
         publicKey: myPublicKey
     });
     socket.on('chat history', function(history) {
-        messageList.innerHTML = '';
         history.forEach(msg => {
             displayMessage(msg)
         });
     });
     socket.on('chat message', function(msg) {
-        displayMessage(msg);
+        if (currentRoom === 'global') {
+            displayMessage(msg);
+        } else {
+            globalChatButton.classList.add('unread');
+        }
 
         if (msg.username === 'System') {
             if (msg.content.includes('joined')) {
@@ -138,11 +135,61 @@ function joinChat(name) {
     });
     socket.on('user list', function(users) {
         globalUsersList = users;
-        renderUserList();
+        renderUserList(users);
+    });
+    socket.on('dm request', function(data) {
+        pendingDmSender = data.from;
+        pendingDmKey = data.publicKey;
+
+        dmRequestText.textContent = `${pendingDmSender} wants to start a private chat with you.`;
+        dmNotification.style.display = 'block';
+        dmRequestSound.play();
+    });
+    socket.on('dm response', async function(data) {
+        if (data.accepted) {
+            dmAcceptSound.currentTime = 0;
+            dmAcceptSound.play();
+
+            const pc = createPeerConnection(data.from, true, data.publicKey);
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            socket.emit('signal', {
+                to: data.from,
+                signal: { type: 'offer', sdp: offer }
+            });
+        } else {
+            dmDeclineSound.currentTime = 0;
+            dmDeclineSound.play();
+        }
+    });
+    socket.on('signal', async function(data) {
+        const targetHandle = data.from;
+        const signal = data.signal;
+
+        const peerObj = peers[targetHandle];
+        if (!peerObj) return;
+
+        const pc = peerObj.connection;
+
+        if (signal.type === 'offer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+            const anwser = await pc.createAnswer();
+            await pc.setLocalDescription(anwser);
+
+            socket.emit('signal', {
+                to: targetHandle,
+                signal: { type: 'answer', sdp: anwser }
+            });
+        } else if (signal.type === 'answer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+        } else if (signal.type === 'candidate') {
+            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+        }
     });
 }
 
-function sendMessage() {
+function sendMessage(event) {
     const text = messageInput.value.trim();
     if (text !== '') {
         const msgObject = {
@@ -181,12 +228,37 @@ loginButton.addEventListener('click', function() {
         alert('Please enter a username');
     }
 });
+globalChatButton.addEventListener('click', function() {
+    switchRoom('global');
+});
+declineDmButton.addEventListener('click', function() {
+    if (pendingDmSender) {
+        socket.emit('dm response', {
+            to: pendingDmSender,
+            accepted: false
+        });
+        dmNotification.style.display = 'none';
+        pendingDmSender = null;
+        console.log("Declined DM request from " + pendingDmSender);
+    }
+});
+acceptDmButton.addEventListener('click', function() {
+    if (pendingDmSender) {
+        socket.emit('dm response', {
+            to: pendingDmSender,
+            accepted: true
+        });
+        
+        createPeerConnection(pendingDmSender, false, pendingDmKey);
+        dmNotification.style.display = 'none';
+    }
+});
 
 messageInput.addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
-        sendMessage();
+        sendMessage(event);
     }
-});
+})
 usernameInput.addEventListener('keydown', function(event) {;
     if (event.key === 'Enter') {
         loginButton.click();
@@ -232,6 +304,7 @@ imageInput.addEventListener('change', async function(event) {
         imageInput.value = '';
     }
 });
+
 
 (async function initApp() {
     await Identity.loadOrCreate();

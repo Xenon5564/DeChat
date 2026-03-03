@@ -5,7 +5,6 @@ const express = require('express');
 const https = require('https');
 const multer = require('multer');
 const fs = require('fs');
-const { send } = require('process');
 const app = express();
 
 const options = {
@@ -24,35 +23,6 @@ let onlineUsers = {};
 app.use(express.static(__dirname));
 app.use('/uploads', express.static('uploads'));
 
-const commands = {
-    'direct': (socket, args) => {
-        const senderHandle = `${socket.username}#${socket.tag}`;
-        const targetHandle = args[0];
-
-        if (!targetHandle) {
-            socket.emit('chat message', { username: 'System', content: 'Usage: /Direct <username#tag>' });
-            return;
-        }
-
-        if (targetHandle === senderHandle) {
-            socket.emit('chat message', { username: 'System', content: 'You cannot DM yourself!' });
-            return;
-        }
-
-        const targetSocketId = getSocketIdByHandle(targetHandle);
-        if (targetSocketId) {
-             io.to(targetSocketId).emit('dm request', {
-                from: senderHandle, 
-                publicKey: socket.publicKey
-            });
-
-            socket.emit('chat message', { username: 'System', content: `DM request sent to ${targetHandle}` });
-        } else {
-            socket.emit('chat message', { username: 'System', content: `User ${targetHandle} not found` });
-        }
-    }
-}
-
 function generateTag(keyString) {
     if(!keyString) return '0000';
      
@@ -63,17 +33,6 @@ function generateTag(keyString) {
     }
 
     return Math.abs(hash).toString(16).substring(0, 4).toUpperCase();
-}
-function getSocketIdByHandle(handle) {
-    const sockets = Object.keys(onlineUsers);
-    for (let socketID of sockets) {
-        const user = onlineUsers[socketID];
-        const userHandle = `${user.username}#${user.tag}`;
-        if (userHandle === handle) {
-            return socketID;
-        }
-    }
-    return null;
 }
 
 const storage = multer.diskStorage({
@@ -131,7 +90,6 @@ io.on ('connection', (socket) => {
         io.emit('chat message', connectMessage);
         io.emit('user list', Object.values(onlineUsers));
         
-        //const filteredHistory = chatHistory.filter(msg => msg.timestamp >= data.firstJoined);
         socket.emit('chat history', chatHistory);
     });
     socket.on('chat message', async (msg) => {
@@ -152,22 +110,11 @@ io.on ('connection', (socket) => {
             );
 
             if (isValid) {
-                if (msg.type === 'text' && msg.content.startsWith('/')) {
-                const args = msg.content.slice(1).trim().split(' ');
-                const command = args.shift();
-
-                if (commands[command]) {
-                    commands[command](socket, args);
-                } else {
-                    socket.emit('chat message', { username: 'System', content: `Unknown command: ${command}` });
-                }
-                } else {
-                    msg.timestamp = Date.now();
-                    const fullHandle = `${socket.username}#${socket.tag}`;
-                    msg.username = fullHandle;
-                    if (msg.username !== 'System') chatHistory.push(msg);
-                    io.emit('chat message', msg);
-                }
+                msg.timestamp = Date.now();
+                const fullHandle = `${socket.username}#${socket.tag}`;
+                msg.username = fullHandle;
+                if (msg.username !== 'System') chatHistory.push(msg);
+                io.emit('chat message', msg);
             } else {
                 console.warn(`Tampered message was detected from ${socket.username}#${socket.tag}`);
                 socket.emit('chat message', { username: 'System', content: 'Message signature verification failed. Your message was not sent.' });
@@ -189,29 +136,6 @@ io.on ('connection', (socket) => {
                 content: `${socket.username}#${socket.tag} has left the chat` 
             };
             io.emit('chat message', disconnectMessage);
-        }
-    });
-    socket.on('dm response', (data) => {
-        const targetSocketId = getSocketIdByHandle(data.to);
-        const senderHandle = `${socket.username}#${socket.tag}`;
-
-        if (targetSocketId) {
-            io.to(targetSocketId).emit('dm response', {
-                from: senderHandle,
-                accepted: data.accepted,
-                publicKey: socket.publicKey
-            });
-        }
-    });
-    socket.on('signal', (data) => {
-        const targetSocketId = getSocketIdByHandle(data.to);
-        const senderHandle = `${socket.username}#${socket.tag}`;
-
-        if (targetSocketId) {
-            io.to(targetSocketId).emit('signal', {
-                from: senderHandle,
-                signal: data.signal
-            });
         }
     });
     socket.on('request chat history', () => {
