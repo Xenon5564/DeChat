@@ -2,17 +2,25 @@
   "name": "p2p-chat",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "server": "cd server && node server.js",
+    "client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Xenon5564/DeChat.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "dependencies": {
-    "express": "^5.2.1",
-    "multer": "^2.0.2",
-    "socket.io": "^4.8.3"
+  "bugs": {
+    "url": "https://github.com/Xenon5564/DeChat/issues"
+  },
+  "homepage": "https://github.com/Xenon5564/DeChat#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

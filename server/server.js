@@ -14,7 +14,11 @@ const options = {
 
 const server = https.createServer(options, app);
 const io = new Server(server, {
-    maxHttpBufferSize: 10485760
+    maxHttpBufferSize: 1e8,
+    cors: {
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST"]
+    }
 });
 
 let chatHistory = [];

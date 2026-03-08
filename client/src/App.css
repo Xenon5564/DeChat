@@ -6,6 +6,15 @@ body {
     padding: 0;
 }
 
+#container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background-color: #2a2a40; /* Your purple color */
+}
+
 /* Style for chat area */
 #messageList {
     width: 80vh;
@@ -20,19 +29,6 @@ body {
     flex-direction: row;
     align-items: stretch;
     width: 100%;
-}
-#dmList {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
-#dmList li {
-    padding: 8px;
-    cursor: pointer;
-    border-radius: 5px;
-}
-#dmList li:hover {
-    background-color: #353545;
 }
 
 /* Style for containers */
@@ -56,7 +52,7 @@ body {
     width: 100%;
 }
 #userListContainer {
-    width: 250px;
+    width: 300px;
     background-color: #444468;
     border-radius: 5px;
     border: #535374 2px solid;
@@ -64,29 +60,17 @@ body {
     padding: 10px;
     box-sizing: border-box;
 }
-#roomListContainer {
-    width: 200px;
-    background-color: #444468; 
-    border-radius: 5px;
-    border: #535374 2px solid;
-    padding: 10px;
-    margin-right: 20px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0; 
-}
-#inputContainer {
+#inputArea {
     display: flex;
     flex-direction: row;
     align-items: center;
     margin-top: 10px;
-    margin-left: 32vh;
+    margin-left: 5vh;
 }
 
 /* Style for input fields */
-#usernameInput, #content {
-    width: 25%;
+#usernameInput, #messageContent {
+    width: 50%;
     padding: 10px;
     margin-top: 10px;
     margin-right: 10px;
@@ -102,7 +86,7 @@ body {
 }
 
 /* Style for buttons */
-#loginButton, #send, #disconnectButton, #attachmentButton{
+#loginBtn, #sendBtn, #disconnectBtn, #attachmentBtn{
     padding: 11px 20px;
     margin-top: 10px;
     margin-right: 10px;
@@ -112,40 +96,15 @@ body {
     color: white;
     cursor: pointer;
 }
-#attachmentButton {
+#attachmentBtn {
     padding: 8px 20px;
     background-color: #2196F3;
 }
-#disconnectButton {
+#disconnectBtn {
     margin-left: 20vh;
     background-color: #f44336;
 }
-.room-btn {
-    background-color: transparent;
-    border: none;
-    color: #f0f0f0;
-    padding: 10px;
-    text-align: left;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 16px;
-    transition: background 0.2s;
-    width: 100%;
-}
-.room-btn.active {
-    background-color: #353545;
-    color: white;
-    font-weight: bold;
-}
-.room-btn.unread {
-    color: #ff4444;
-    font-weight: bold;
-}
-.room-btn.unread::after{
-    content:" 🔴";
-    font-size: 0.8em;
-}
-#loginButton:hover, #send:hover {
+#loginBtn:hover, #sendBtn:hover {
     background-color: #45a049;
 }
 
@@ -174,51 +133,4 @@ body {
     font-size: 0.8em;
     color: #888;
     margin-top: 5px;
-}
-
-/* Style for DM notifs */
-#dmNotif {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 300px;
-    background-color: #33334d;
-    border: 2px solid #535374;
-    border-radius: 10px;
-    padding: 15px;
-    color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);   
-    z-index: 1000;
-    text-align: center;
-}
-#dmNotif h3 {
-    margin-top: 0;
-    color: #4caf50;
-}
-#dmNotif .button-row {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 15px;
-}
-#acceptDm {
-    background: #4CAF50;
-    padding: 11px 20px;
-    border: none;
-    color: white;
-    border-radius: 5px;
-    width: 30%
-}
-#declineDm {
-    background: #f44336;
-    padding: 11px 20px;
-    border: none;
-    border-radius: 5px;
-    color: white;
-    width: 30%;
-}
-#acceptDm:hover {
-    background-color: #45a049;
-}
-#declineDm:hover {
-    background-color: #e53935;
 }

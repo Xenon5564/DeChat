@@ -1,4 +1,5 @@
 node_modules/
-key.pem
-cert.pem
-uploads/
+server/key.pem
+server/cert.pem
+server/uploads/
+server/node_modules/
