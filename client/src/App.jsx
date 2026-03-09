@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Identity } from './identity';
-import UserList from "./components/UserList";
+import UserList from "./components/Userlist";
+import ChannelList from "./components/Channellist";
 import './App.css';
 
 function App() {
-
   const [socket, setSocket] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
   const [myUsername, setMyUsername] = useState(localStorage.getItem('username') || '');
@@ -13,61 +13,74 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [joining, setJoining] = useState(false);
   const [typedMessage, setTypedMessage] = useState('');
+  const [channels, setChannels] = useState([]);
+  const [unreadChannels, setUnreadChannels] = useState([]);
+  const [currentRoom, setCurrentRoom] = useState('');
 
   const messageListRef = useRef(null);
+  const currentRoomRef = useRef(currentRoom);
+
+  useEffect(() => {
+    currentRoomRef.current = currentRoom;
+  }, [currentRoom]);
 
   useEffect(() => {
     let newSocket;
-    let active = true;
     const bootUp = async () => {
       await Identity.loadOrCreate();
-      if(!active) return;
-      console.log("Identity Ready");
-
-      newSocket = io(); 
+      
+      newSocket = io();
       setSocket(newSocket);
 
+      newSocket.on('channel list', (chans) => {
+        setChannels(chans);
+        // Automatically switch to first channel on initial load
+        if (chans.length > 0) {
+          switchRoom(chans[0].id, newSocket);
+        }
+      });
+
       newSocket.on('user list', (users) => setOnlineUsers(users));
+      
       newSocket.on('chat message', (msg) => {
-        setMessages((prev) => [...prev, msg]);
+        if (msg.roomId === currentRoomRef.current || msg.username === 'System') {
+          setMessages((prev) => [...prev, msg]);
+        } else {
+          setUnreadChannels((prev) => ({
+            ...prev,
+            [msg.roomId]: true
+          }));
+        }
       });
-      newSocket.on('join success', () => 
-      {
-          setLoggedIn(true);
-          setJoining(false);
+
+      newSocket.on('join success', () => {
+        setLoggedIn(true);
+        setJoining(false);
       });
+
       newSocket.on('join error', (err) => {
         alert(err);
         setJoining(false);
         localStorage.removeItem('username');
       });
-      newSocket.on('chat history', (history) => 
-      {
+
+      newSocket.on('chat history', (history) => {
         setMessages(history);
-      })
+      });
 
       const savedName = localStorage.getItem('username');
       if (savedName) {
-        const myPublicKey = localStorage.getItem('publicKey');
         setJoining(true);
         newSocket.emit('join', {
           username: savedName,
-          publicKey: myPublicKey,
+          publicKey: localStorage.getItem('publicKey'),
           firstJoined: parseInt(localStorage.getItem('joinTime')) || Date.now()
         });
       }
     };
 
     bootUp();
-
-    return () => {
-      if (newSocket) {
-        newSocket.disconnect();
-        newSocket.off('chat message');
-        newSocket.off('user list');
-      }
-      active = false;
-    };
+    return () => { if (newSocket) newSocket.disconnect(); };
   }, []);
 
   useEffect(() => {
@@ -76,10 +89,26 @@ function App() {
     }
   }, [messages]);
 
+  const switchRoom = (targetRoomId, activeSocket = socket) => {
+    if (targetRoomId === currentRoomRef.current) return;
+    setCurrentRoom(targetRoomId);
+    setMessages([]);
+
+    setUnreadChannels((prev) => ({
+      ...prev,
+      [targetRoomId]: false
+    }));
+
+    if (activeSocket) {
+      activeSocket.emit('switch room', targetRoomId);
+      activeSocket.emit('request chat history', targetRoomId);
+    }
+  };
+
   const handleLogin = () => {
-    if (loggedIn) return;
+    if (loggedIn || !socket) return;
     if (!myUsername.trim()) return alert("Enter a name");
-    if (myUsername === "System") return alert("This name is reserved. Pick another one");
+    if (myUsername === "System") return alert("Name reserved.");
 
     localStorage.setItem('username', myUsername);
     setJoining(true);
@@ -91,28 +120,24 @@ function App() {
   };
 
   const handleSendMessage = async () => {
-    if(!typedMessage.trim() || !socket) return;
-
+    if (!typedMessage.trim() || !socket) return;
     const sig = await Identity.sign(typedMessage.trim());
-    const msgObject= {
+    socket.emit('chat message', {
       username: myUsername,
       type: 'text',
       timestamp: Date.now(),
       content: typedMessage.trim(),
-      signature: sig
-    };
-
-    
-    socket.emit('chat message', msgObject);
-
+      signature: sig,
+      roomId: currentRoom
+    });
     setTypedMessage('');
-  }
+  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if(!file || !socket) return;
 
-    if(file.size > 50 * 1024 * 1024) return alert("File too big (Max 50MB)");
+    if(file.size > 100 * 1024 * 1024) return alert("File too big (Max 100MB)");
 
     try {
       const formData = new FormData();
@@ -127,7 +152,8 @@ function App() {
         type: 'image',
         timestamp: Date.now(),
         content: result.url,
-        signature: sig
+        signature: sig,
+        roomId: currentRoom
       };
 
       socket.emit('chat message', msgObject);
@@ -144,45 +170,27 @@ function App() {
   return (
     <div id="container">
       <h1>DeChat React</h1>
-
       {!loggedIn ? (
-        /* LOGIN SCREEN */
         <div id="loginPage">
-          <input 
-            type="text"
-            id="usernameInput"
-            value={myUsername} 
-            onChange={(e) => setMyUsername(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-            disabled={joining}
-            placeholder="Username..."
-          />
-          <button onClick={handleLogin} disabled={joining} id="loginBtn">
-            {joining ? "Connecting..." : "Connect"}
-          </button>
+          <input value={myUsername} onChange={(e) => setMyUsername(e.target.value)} placeholder="Username..." />
+          <button onClick={handleLogin} disabled={joining}>Connect</button>
         </div>
       ) : (
-        /* CHAT SCREEN */
-        <div id="chatPage" style={{display: 'flex', flexDirection: 'column'}}>
+        <div id="chatPage">
           <div id="chatBody">
+            <ChannelList channels={channels} currentRoom={currentRoom} unreadChannels={unreadChannels} onSwitch={(id) => switchRoom(id, socket)} />
             <div id="messageContainer">
               <div id="messageList" ref={messageListRef}>
                 {messages.map((msg, idx) => (
                   <div key={idx} className="message-bubble">
                     <strong>{msg.username}: </strong>
-                    {msg.type === 'image' ? (
-                      <img src={msg.content} className='chat-image' alt="upload" />
-                    ) : (
-                      <span>{msg.content}</span>
-                    )}
+                    {msg.type === 'image' ? <img src={msg.content} className='chat-image' /> : <span>{msg.content}</span>}
                   </div>
                 ))}
               </div>
             </div>
-            
             <UserList users={onlineUsers} myKey={localStorage.getItem('publicKey')} />
           </div>
-
           <div id="inputArea">
             <input
               type="text"

@@ -1,5 +1,14 @@
+:root {
+    --primary-color: #2a2a40;
+    --secondary-color: #444468;
+    --border-color: #535374;
+
+    --border-radius: 5px;
+    --container-margins: 20px;
+}
+
 body {
-    background-color: #2a2a40;
+    background-color: var(--primary-color);
     color: #f0f0f0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
@@ -12,7 +21,7 @@ body {
     align-items: center;
     width: 100vw;
     height: 100vh;
-    background-color: #2a2a40; /* Your purple color */
+    background-color: var(--primary-color); /* Your purple color */
 }
 
 /* Style for chat area */
@@ -22,7 +31,7 @@ body {
     overflow-y: auto;
     box-sizing: border-box;
     scrollbar-width: thick;
-    scrollbar-color: #888 #2a2a40;
+    scrollbar-color: #888;
 }
 #chatBody {
     display: flex;
@@ -41,9 +50,9 @@ body {
     margin: 0;
 }
 #messageContainer{
-    background-color: #444468;
+    background-color: var(--secondary-color);
     border-radius: 5px;
-    border: #535374 2px solid;
+    border: var(--border-color) 2px solid;
     margin-bottom: 2px;
     padding: 5px;
     display: flex;
@@ -53,9 +62,9 @@ body {
 }
 #userListContainer {
     width: 300px;
-    background-color: #444468;
+    background-color: var(--secondary-color);
     border-radius: 5px;
-    border: #535374 2px solid;
+    border: var(--border-color) 2px solid;
     margin-left: 20px;
     padding: 10px;
     box-sizing: border-box;
@@ -66,6 +75,16 @@ body {
     align-items: center;
     margin-top: 10px;
     margin-left: 5vh;
+}
+#roomListContainer {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--secondary-color);
+    border: var(--border-color) 2px solid;
+    width: 300px;
+    padding: 10px;
+    border-radius: 5px;
+    margin-right: 20px
 }
 
 /* Style for input fields */
@@ -120,9 +139,9 @@ body {
     margin-top: 5px;
 }
 .message-bubble {
-    background-color: #444468;
+    background-color: var(--secondary-color);
     border-radius: 5px;
-    border: #535374 2px solid;
+    border: var(--border-color) 2px solid;
     margin-bottom: 2px;
     padding: 5px;
     box-sizing: border-box;
@@ -133,4 +152,29 @@ body {
     font-size: 0.8em;
     color: #888;
     margin-top: 5px;
+}
+.room-btn {
+    background-color: transparent;
+    border: none;
+    color: #f0f0f0;
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.2s;
+    width: 100%;
+}
+.room-btn.active {
+    background-color: #353545;
+    color: white;
+    font-weight: bold;
+}
+.room-btn:hover{
+    background-color: var(--primary-color);
+    color: #dcddde;
+    cursor: pointer;
+}
+.room-btn.unread {
+    color:#2196F3;
+    font-weight: bold;
 }

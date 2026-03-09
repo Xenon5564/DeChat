@@ -21,14 +21,45 @@ const io = new Server(server, {
     }
 });
 
-let chatHistory = [];
+let chatChannels = [];
+let chatHistories = {};
 let onlineUsers = {};
 
 app.use(express.static(__dirname));
 app.use('/uploads', express.static('uploads'));
 
+function initializeChannels()
+{
+    const defaultChannel = [
+        {id: "general", name: "General", type:"text"}
+    ];
+
+    try {
+        if (!fs.existsSync('channels.json')) {
+            console.log("Channels file not found, generating default...");
+            
+            const jsonString = JSON.stringify(defaultChannel, null, 2);
+            fs.writeFileSync('channels.json', jsonString, 'utf8');
+            chatChannels = defaultChannel;
+        } else {
+            console.log("Found channels.json, loading config...");
+            const fileContent = fs.readFileSync('channels.json', 'utf8');
+            chatChannels = JSON.parse(fileContent);
+        }
+    } catch (err) {
+        console.error("Error initializing channels", err);
+    }
+
+    chatChannels.forEach(channel => {
+        if (!chatHistories[channel.id]) {
+            chatHistories[channel.id] = [];
+        }
+    });
+
+}
+
 function generateTag(keyString) {
-    if(!keyString) return '0000';
+    if (!keyString) return '0000';
      
     let hash = 0;
     for (let i = 0; i < keyString.length; i++) {
@@ -83,6 +114,8 @@ io.on ('connection', (socket) => {
         };
 
         socket.emit('join success');
+        
+        socket.emit('channel list', chatChannels);
 
         console.log(`${socket.username}#${socket.tag} joined the chat`);
         const connectMessage = { 
@@ -93,12 +126,12 @@ io.on ('connection', (socket) => {
         
         io.emit('chat message', connectMessage);
         io.emit('user list', Object.values(onlineUsers));
-        
-        socket.emit('chat history', chatHistory);
     });
     socket.on('chat message', async (msg) => {
         try {
             const user = onlineUsers[socket.id];
+            const roomId = msg.roomId;
+            if (!chatHistories[roomId]) chatHistories[roomId] = [];
             if (!user || !user.publicKey) return;
 
             const publicKeyObject = await importUserPublicKey(user.publicKey);
@@ -114,11 +147,12 @@ io.on ('connection', (socket) => {
             );
 
             if (isValid) {
-                msg.timestamp = Date.now();
                 const fullHandle = `${socket.username}#${socket.tag}`;
+                msg.timestamp = Date.now();
                 msg.username = fullHandle;
-                if (msg.username !== 'System') chatHistory.push(msg);
-                io.emit('chat message', msg);
+                chatHistories[roomId].push(msg);
+                console.log(msg);
+                io.to(msg.roomId).emit('chat message', msg);
             } else {
                 console.warn(`Tampered message was detected from ${socket.username}#${socket.tag}`);
                 socket.emit('chat message', { username: 'System', content: 'Message signature verification failed. Your message was not sent.' });
@@ -142,9 +176,17 @@ io.on ('connection', (socket) => {
             io.emit('chat message', disconnectMessage);
         }
     });
-    socket.on('request chat history', () => {
-        socket.emit('chat history', chatHistory);
+    socket.on('request chat history', (roomId) => {
+        const history = chatHistories[roomId] || [];
+        console.log(history);
+        socket.emit('chat history', history);
+        console.log(`${socket.username}#${socket.tag} requested history of: ${roomId}`);
     });
+    socket.on('switch room', (newRoom) => {
+        socket.leave(socket.lastRoom);
+        socket.join(newRoom);
+        socket.lastRoom = newRoom;
+    })
 });
 
 async function importUserPublicKey(jwk) {
@@ -160,6 +202,8 @@ async function importUserPublicKey(jwk) {
         ["verify"]
     );
 }
+
+initializeChannels();
 
 server.listen(3000, () => {
     console.log('Server is running on https://localhost:3000');
