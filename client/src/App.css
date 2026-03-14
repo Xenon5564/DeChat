@@ -128,7 +128,7 @@ body {
 }
 
 /*Style for classes*/
-.chat-image {
+.chat-media {
     max-width: 100%;
     max-height: 800px;
     width: auto;
@@ -174,7 +174,15 @@ body {
     color: #dcddde;
     cursor: pointer;
 }
-.room-btn.unread {
-    color:#2196F3;
+.chat-audio {
+    margin-top: 5px;
+    height: 40px;
+    max-width: 250px;
+    outline: none; 
+}
+.chat-file-link {
+    color: #4CAF50;
+    text-decoration: underline;
     font-weight: bold;
+    word-break: break-all;
 }

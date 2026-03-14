@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { Identity } from './identity';
+import { embedProviders } from './utils/embedProviders';
 import UserList from "./components/Userlist";
 import ChannelList from "./components/Channellist";
+import Message from "./components/Message";
 import './App.css';
 
 function App() {
@@ -133,7 +135,7 @@ function App() {
     setTypedMessage('');
   };
 
-  const handleImageUpload = async (e) => {
+  const handleMediaUpload = async (e) => {
     const file = e.target.files[0];
     if(!file || !socket) return;
 
@@ -149,7 +151,7 @@ function App() {
       
       const msgObject = {
         username: myUsername,
-        type: 'image',
+        type: 'media',
         timestamp: Date.now(),
         content: result.url,
         signature: sig,
@@ -167,13 +169,19 @@ function App() {
     window.location.reload();
   };
 
+  const scrollToBottom = () => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  };
+
   return (
     <div id="container">
       <h1>DeChat React</h1>
       {!loggedIn ? (
         <div id="loginPage">
-          <input value={myUsername} onChange={(e) => setMyUsername(e.target.value)} placeholder="Username..." />
-          <button onClick={handleLogin} disabled={joining}>Connect</button>
+          <input value={myUsername} onChange={(e) => setMyUsername(e.target.value)} placeholder="Username..."  id="usernameInput"/>
+          <button onClick={handleLogin} disabled={joining} id="loginBtn">Connect</button>
         </div>
       ) : (
         <div id="chatPage">
@@ -182,10 +190,7 @@ function App() {
             <div id="messageContainer">
               <div id="messageList" ref={messageListRef}>
                 {messages.map((msg, idx) => (
-                  <div key={idx} className="message-bubble">
-                    <strong>{msg.username}: </strong>
-                    {msg.type === 'image' ? <img src={msg.content} className='chat-image' /> : <span>{msg.content}</span>}
-                  </div>
+                  <Message key={idx} msg={msg} onMediaLoad={scrollToBottom} />
                 ))}
               </div>
             </div>
@@ -204,8 +209,7 @@ function App() {
             <input
               type="file"
               id="attachmentInput"
-              accpet="image/*"
-              onChange={handleImageUpload}
+              onChange={handleMediaUpload}
               style={{display: 'none'}}
             />
             <button id="sendBtn" onClick={handleSendMessage}>Send</button>
