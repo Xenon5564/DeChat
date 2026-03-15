@@ -25,7 +25,7 @@ let chatChannels = [];
 let chatHistories = {};
 let onlineUsers = {};
 
-app.use(express.static(__dirname));
+app.use(express.static(__dirname)); //__dirname - dev "../client/dist" - production
 app.use('/uploads', express.static('uploads'));
 
 function initializeChannels()
