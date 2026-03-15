@@ -2,9 +2,6 @@
     --primary-color: #2a2a40;
     --secondary-color: #444468;
     --border-color: #535374;
-
-    --border-radius: 5px;
-    --container-margins: 20px;
 }
 
 body {
@@ -12,177 +9,126 @@ body {
     color: #f0f0f0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    padding: 0;
+    height: 100vh;
+    overflow: hidden; /* Prevents body scroll */
 }
 
 #container {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-    background-color: var(--primary-color); /* Your purple color */
+    height: calc(100vh - 40px);
+    width: calc(100vw - 40px);
+    margin: 20px auto;
 }
 
-/* Style for chat area */
-#messageList {
-    width: 80vh;
-    height: 80vh;
-    overflow-y: auto;
-    box-sizing: border-box;
-    scrollbar-width: thick;
-    scrollbar-color: #888;
+/* Chat Page fills the remaining screen */
+#chatPage {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+    padding: 10px;
+    gap: 10px;
 }
+
 #chatBody {
     display: flex;
     flex-direction: row;
-    align-items: stretch;
-    width: 100%;
+    flex-grow: 1;
+    min-height: 0;
+    gap: 15px;
 }
 
-/* Style for containers */
-#container {
+/* Columns */
+#roomListContainer, #userListContainer {
+    flex: 0 0 250px;
+    background-color: var(--secondary-color);
+    border: var(--border-color) 2px solid;
+    border-radius: 5px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
 }
-#messageContainer{
+
+#messageContainer {
+    flex-grow: 1;
     background-color: var(--secondary-color);
-    border-radius: 5px;
     border: var(--border-color) 2px solid;
-    margin-bottom: 2px;
+    border-radius: 5px;
     padding: 5px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 100%;
+    min-width: 0;
 }
-#userListContainer {
-    width: 300px;
-    background-color: var(--secondary-color);
-    border-radius: 5px;
-    border: var(--border-color) 2px solid;
-    margin-left: 20px;
+
+#messageList {
+    flex-grow: 1;
+    overflow-y: auto;
     padding: 10px;
-    box-sizing: border-box;
 }
+
+/* Input Area pinned to bottom */
 #inputArea {
     display: flex;
     flex-direction: row;
     align-items: center;
+    gap: 10px;
+    padding: 10px;
     margin-top: 10px;
-    margin-left: 5vh;
-}
-#roomListContainer {
-    display: flex;
-    flex-direction: column;
     background-color: var(--secondary-color);
-    border: var(--border-color) 2px solid;
-    width: 300px;
-    padding: 10px;
     border-radius: 5px;
-    margin-right: 20px
 }
 
-/* Style for input fields */
-#usernameInput, #messageContent {
-    width: 50%;
+#messageContent {
+    flex-grow: 1;
     padding: 10px;
-    margin-top: 10px;
-    margin-right: 10px;
-    margin-left: 5px;
     border: none;
     border-radius: 5px;
-}
-#usernameInput:hover, #content:hover {
-    background-color: #dddddd;
-}
-#attachment {
-    display: none;
+    background: #f1f1f1;
 }
 
-/* Style for buttons */
-#loginBtn, #sendBtn, #disconnectBtn, #attachmentBtn{
-    padding: 11px 20px;
-    margin-top: 10px;
-    margin-right: 10px;
-    border: none;
+/* Buttons */
+#sendBtn { background-color: #4CAF50; }
+#disconnectBtn { background-color: #f44336; }
+#attachmentBtn { background-color: #2196F3; cursor: pointer; }
+button{
     border-radius: 5px;
-    background-color: #4CAF50;
-    color: white;
+    padding: 8px;
     cursor: pointer;
+    color: #f0f0f0;
+    box-shadow: none;
 }
-#attachmentBtn {
-    padding: 8px 20px;
-    background-color: #2196F3;
-}
-#disconnectBtn {
-    margin-left: 20vh;
-    background-color: #f44336;
-}
-#loginBtn:hover, #sendBtn:hover {
-    background-color: #45a049;
-}
-
-/*Style for classes*/
-.chat-media {
-    max-width: 100%;
-    max-height: 800px;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    display: block;
-    border-radius: 8px;
-    margin-top: 5px;
-}
-.message-bubble {
-    background-color: var(--secondary-color);
-    border-radius: 5px;
-    border: var(--border-color) 2px solid;
-    margin-bottom: 2px;
-    padding: 5px;
-    box-sizing: border-box;
-    overflow-wrap: break-word;
-}
-.timestamp {
-    padding-bottom: 0.1em;
-    font-size: 0.8em;
-    color: #888;
-    margin-top: 5px;
+.room-btn.active{
+    font-weight: bold;
+    background-color: #2e2e47;
 }
 .room-btn {
-    background-color: transparent;
+    background-color:  #353545;
     border: none;
-    color: #f0f0f0;
-    padding: 10px;
-    text-align: left;
-    cursor: pointer;
+    margin-bottom: 8px;
+    padding: 8px;
     border-radius: 5px;
-    transition: background 0.2s;
-    width: 100%;
 }
-.room-btn.active {
+
+
+
+/* Components */
+.message-bubble {
     background-color: #353545;
-    color: white;
-    font-weight: bold;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    padding: 8px;
 }
-.room-btn:hover{
-    background-color: var(--primary-color);
-    color: #dcddde;
-    cursor: pointer;
-}
-.chat-audio {
+
+.chat-media {
+    max-width: 100%;
+    display: block;
     margin-top: 5px;
-    height: 40px;
-    max-width: 250px;
-    outline: none; 
+    border-radius: 5px;
 }
-.chat-file-link {
-    color: #4CAF50;
-    text-decoration: underline;
-    font-weight: bold;
-    word-break: break-all;
+
+.timestamp {
+    color: #888;       /* Make sure this is a visible shade of gray */
+    font-size: 0.8em;  /* Make sure it's not 0px */
+    margin-right: 5px;
 }

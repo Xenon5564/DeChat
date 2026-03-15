@@ -177,7 +177,6 @@ function App() {
 
   return (
     <div id="container">
-      <h1>DeChat React</h1>
       {!loggedIn ? (
         <div id="loginPage">
           <input value={myUsername} onChange={(e) => setMyUsername(e.target.value)} placeholder="Username..."  id="usernameInput"/>

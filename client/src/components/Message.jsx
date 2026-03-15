@@ -45,6 +45,7 @@ function Message({ idx, msg, onMediaLoad }) {
 
   return (
         <div key={idx} className="message-bubble">
+            <span className="timestamp">[{timeString}] </span> 
             <strong>{msg.username}: </strong>
             {renderContent(msg)}
         </div>
