@@ -95,7 +95,7 @@ button{
     border-radius: 5px;
     padding: 8px;
     cursor: pointer;
-    color: #f0f0f0;
+    color: #4d4d4d;
     box-shadow: none;
 }
 .room-btn.active{
