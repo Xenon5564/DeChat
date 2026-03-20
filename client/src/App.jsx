@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { CryptoEngine } from './CryptoEngine';
 import { Vault } from './Vault';
+import { DBHandler, DB_KEYS  } from './DBHandler';
 import { embedProviders } from './utils/embedProviders';
 import UserList from "./components/Userlist";
 import ChannelList from "./components/Channellist";
@@ -13,9 +14,9 @@ function App() {
   const [loginState, setLoginState] = useState('CHECK');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [publicKey, setPublicKey] = useState('');
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [joining, setJoining] = useState(false);
   const [typedMessage, setTypedMessage] = useState('');
   const [channels, setChannels] = useState([]);
   const [unreadChannels, setUnreadChannels] = useState([]);
@@ -28,69 +29,64 @@ function App() {
     currentRoomRef.current = currentRoom;
   }, [currentRoom]);
 
-  // useEffect(() => {
-  //   let newSocket;
-  //   const bootUp = async () => {
-  //     await Identity.loadOrCreate();
+  useEffect(() => {
+    if (loginState !== 'CHAT') return;
+
+    let newSocket;
+
+    const connect = async () => {
+      newSocket = io();
+      setSocket(newSocket);
+
+      newSocket.on('channel list', (chans) => {
+        setChannels(chans);
+        if (chans.length > 0) {
+          switchRoom(chans[0].id, newSocket);
+        }
+      });
+
+      newSocket.on('user list', (users) => setOnlineUsers(users));
       
-  //     newSocket = io();
-  //     setSocket(newSocket);
-
-  //     newSocket.on('channel list', (chans) => {
-  //       setChannels(chans);
-  //       // Automatically switch to first channel on initial load
-  //       if (chans.length > 0) {
-  //         switchRoom(chans[0].id, newSocket);
-  //       }
-  //     });
-
-  //     newSocket.on('user list', (users) => setOnlineUsers(users));
+      newSocket.on('chat message', (msg) => {
+        if (msg.roomId === currentRoomRef.current || msg.username === 'System') {
+          setMessages((prev) => [...prev, msg]);
+        } else {
+          setUnreadChannels((prev) => ({
+            ...prev,
+            [msg.roomId]: true
+          }));
+        }
+      });
       
-  //     newSocket.on('chat message', (msg) => {
-  //       if (msg.roomId === currentRoomRef.current || msg.username === 'System') {
-  //         setMessages((prev) => [...prev, msg]);
-  //       } else {
-  //         setUnreadChannels((prev) => ({
-  //           ...prev,
-  //           [msg.roomId]: true
-  //         }));
-  //       }
-  //     });
+      newSocket.on('join error', (err) => {
+        alert(err);
+        handleLogout();
+      });
 
-  //     newSocket.on('join success', () => {
-  //       setLoggedIn(true);
-  //       setJoining(false);
-  //     });
+      newSocket.on('chat history', (history) => {
+        setMessages(history);
+      });
 
-  //     newSocket.on('join error', (err) => {
-  //       alert(err);
-  //       setJoining(false);
-  //       localStorage.removeItem('username');
-  //     });
+      newSocket.emit('join', {
+        username: username,
+        publicKey: publicKey
+      });
+    };
 
-  //     newSocket.on('chat history', (history) => {
-  //       setMessages(history);
-  //     });
-
-  //     const savedName = localStorage.getItem('username');
-  //     if (savedName) {
-  //       setJoining(true);
-  //       newSocket.emit('join', {
-  //         username: savedName,
-  //         publicKey: localStorage.getItem('publicKey'),
-  //         firstJoined: parseInt(localStorage.getItem('joinTime')) || Date.now()
-  //       });
-  //     }
-  //   };
-
-  //   bootUp();
-  //   return () => { if (newSocket) newSocket.disconnect(); };
-  // }, []);
+    connect();
+    return () => { if (newSocket) newSocket.disconnect(); };
+  }, [loginState]);
 
   useEffect(() => {
-    setTimeout(() => {
-      setLoginState('NO_PROFILE');
-    }, 1000);
+    const checkForProfile = async () => {
+      const profileExists = await DBHandler.has(DB_KEYS.PROFILE);
+      
+      const newState = profileExists ? 'UNLOCK' : 'NO_PROFILE';
+      setLoginState(newState);
+    }
+
+    checkForProfile();
+    CryptoEngine.generateSignKeys();
   },[]);
 
   useEffect(() => {
@@ -131,9 +127,9 @@ function App() {
 
   const handleSendMessage = async () => {
     if (!typedMessage.trim() || !socket) return;
-    const sig = await Identity.sign(typedMessage.trim());
+    const sig = await CryptoEngine.sign(typedMessage.trim());
     socket.emit('chat message', {
-      username: myUsername,
+      username: username,
       type: 'text',
       timestamp: Date.now(),
       content: typedMessage.trim(),
@@ -155,10 +151,10 @@ function App() {
 
       const response = await fetch('/upload', { method: 'POST', body: formData});
       const result = await response.json();
-      const sig = await Identity.sign(result.url);
+      const sig = await CryptoEngine.sign(result.url);
       
       const msgObject = {
-        username: myUsername,
+        username: username,
         type: 'media',
         timestamp: Date.now(),
         content: result.url,
@@ -173,8 +169,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('username');
-    window.location.reload();
+    alert("coming soon");
   };
 
   const handleCreateProfile = async () => {
@@ -183,16 +178,32 @@ function App() {
     }
 
     const salt = window.crypto.getRandomValues(new Uint8Array(16));
-    const key = await Vault.deriveKey(password, salt);
+    const key = await Vault.deriveKey(password, salt);  // Create our AES key
+    const signKeyPair = await CryptoEngine.generateSignKeys(); // Create our RSA keys
 
-    const profileObj = { username: username };
-
+    const profileObj = { username: username, signKeys: signKeyPair };
     const encryptedProfile = await Vault.encryptProfile(key, profileObj);
 
-    console.log(encryptedProfile);
+    await DBHandler.put(DB_KEYS.PROFILE, { profile: encryptedProfile, salt: salt });
+    setLoginState('UNLOCK');
+  }
 
-    const decryptedProfile = await Vault.decryptProfile(key, encryptedProfile.iv, encryptedProfile.ciphertext);
-    console.log(decryptedProfile);
+  const handleUnlock = async () => {
+    const encryptedProfile = await DBHandler.get(DB_KEYS.PROFILE);
+    const aesKey = await Vault.deriveKey(password, encryptedProfile.salt);
+
+    try {
+      const decryptedProfile = await Vault.decryptProfile(aesKey, encryptedProfile.profile.iv, encryptedProfile.profile.ciphertext);
+      console.log(decryptedProfile);
+
+      CryptoEngine.importKeys(decryptedProfile.signKeys);
+      setUsername(decryptedProfile.username);
+      setPublicKey(JSON.stringify(decryptedProfile.signKeys.publicKey));
+      setLoginState('CHAT');
+    } catch (error) {
+      alert('Wrong password');
+    }
+    
   }
 
   const scrollToBottom = () => {
@@ -244,39 +255,50 @@ function App() {
             </div>
           );
 
+        case 'UNLOCK':
+          return(
+            <input
+              type="text"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+              placeholder='Enter your password'
+            />
+          )
+
         case 'CHAT':
           return (
             <div id="chatPage">
-            <div id="chatBody">
-              <ChannelList channels={channels} currentRoom={currentRoom} unreadChannels={unreadChannels} onSwitch={(id) => switchRoom(id, socket)} />
-              <div id="messageContainer">
-                <div id="messageList" ref={messageListRef}>
-                  {messages.map((msg, idx) => (
-                    <Message key={idx} msg={msg} onMediaLoad={scrollToBottom} />
-                  ))}
+              <div id="chatBody">
+                <ChannelList channels={channels} currentRoom={currentRoom} unreadChannels={unreadChannels} onSwitch={(id) => switchRoom(id, socket)} />
+                <div id="messageContainer">
+                  <div id="messageList" ref={messageListRef}>
+                    {messages.map((msg, idx) => (
+                      <Message key={idx} msg={msg} onMediaLoad={scrollToBottom} />
+                    ))}
+                  </div>
                 </div>
+                <UserList users={onlineUsers} myKey={localStorage.getItem('publicKey')} />
               </div>
-              <UserList users={onlineUsers} myKey={localStorage.getItem('publicKey')} />
-            </div>
-            <div id="inputArea">
-              <input
-                type="text"
-                value={typedMessage}
-                onChange={(e) => setTypedMessage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Type a message..."
-                id="messageContent"
-              />
-              <label htmlFor="attachmentInput" id="attachmentBtn">🖼️</label>
-              <input
-                type="file"
-                id="attachmentInput"
-                onChange={handleMediaUpload}
-                style={{display: 'none'}}
-              />
-              <button id="sendBtn" onClick={handleSendMessage}>Send</button>
-              <button id="disconnectBtn" onClick={() => handleLogout()}>Disconnect</button>
-            </div>
+              <div id="inputArea">
+                <input
+                  type="text"
+                  value={typedMessage}
+                  onChange={(e) => setTypedMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type a message..."
+                  id="messageContent"
+                />
+                <label htmlFor="attachmentInput" id="attachmentBtn">🖼️</label>
+                <input
+                  type="file"
+                  id="attachmentInput"
+                  onChange={handleMediaUpload}
+                  style={{display: 'none'}}
+                />
+                <button id="sendBtn" onClick={handleSendMessage}>Send</button>
+                <button id="disconnectBtn" onClick={() => handleLogout()}>Disconnect</button>
+              </div>
           </div>
         );
 
