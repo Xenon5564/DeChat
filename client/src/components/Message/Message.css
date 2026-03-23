@@ -15,14 +15,6 @@
     padding: 10px;
 }
 
-#messageContent {
-    flex-grow: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    background: var(--base-white);
-}
-
 .message-bubble {
     background-color: var(--primary-color);
     border-radius: 5px;

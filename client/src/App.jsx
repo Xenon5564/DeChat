@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { CryptoEngine } from './CryptoEngine';
-import { Vault } from './Vault';
 import { DBHandler, DB_KEYS  } from './DBHandler';
 import { embedProviders } from './utils/embedProviders';
 
@@ -190,11 +189,11 @@ function App() {
     }
 
     const salt = window.crypto.getRandomValues(new Uint8Array(16));
-    const key = await Vault.deriveKey(password, salt);  // Create our AES key
+    const key = await CryptoEngine.deriveKey(password, salt);  // Create our AES key
     const signKeyPair = await CryptoEngine.generateSignKeys(); // Create our RSA keys
 
     const profileObj = { username: username, signKeys: signKeyPair };
-    const encryptedProfile = await Vault.encryptProfile(key, profileObj);
+    const encryptedProfile = await CryptoEngine.encryptProfile(key, profileObj);
 
     await DBHandler.put(DB_KEYS.PROFILE, { profile: encryptedProfile, salt: salt });
     setUsername('');
@@ -204,10 +203,10 @@ function App() {
 
   const handleUnlock = async () => {
     const encryptedProfile = await DBHandler.get(DB_KEYS.PROFILE);
-    const aesKey = await Vault.deriveKey(password, encryptedProfile.salt);
+    const aesKey = await CryptoEngine.deriveKey(password, encryptedProfile.salt);
 
     try {
-      const decryptedProfile = await Vault.decryptProfile(aesKey, encryptedProfile.profile.iv, encryptedProfile.profile.ciphertext);
+      const decryptedProfile = await CryptoEngine.decryptProfile(aesKey, encryptedProfile.profile.iv, encryptedProfile.profile.ciphertext);
       console.log(decryptedProfile);
 
       CryptoEngine.importKeys(decryptedProfile.signKeys);

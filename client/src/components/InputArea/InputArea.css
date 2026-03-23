@@ -9,6 +9,11 @@
     border-radius: 5px;
 }
 
+#messageContent {
+    flex-grow: 1;
+    padding: 9px;
+}
+
 #sendBtn { background-color: var(--button-accept); }
 #disconnectBtn { background-color: var(--button-decline); }
 #attachmentBtn { 
