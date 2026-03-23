@@ -1,0 +1,16 @@
+#loadProfile {
+    background-color: var(--button-primary-color)
+}
+
+#createProfile {
+    background-color: var(--button-primary-color);
+    margin-right: 20px;
+}
+
+#loadProfile:hover, #createProfile:hover {
+    background-color: var(--button-secondary-color)
+}
+
+#loadProfile:active, #createProfile:active {
+    transform: scale(0.95);
+}

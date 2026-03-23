@@ -1,16 +1,25 @@
 :root {
     --primary-color: #2a2a40;
     --secondary-color: #444468;
+    --tetnary-color: #1e1e2e;
     --border-color: #535374;
+
+    --base-white: #f0f0f0;
+
+    --button-primary-color: #444468;
+    --button-secondary-color: #393957;
+
+    --button-accept: #4CAF50;
+    --button-decline: #f44336;
 }
 
 body {
     background-color: var(--primary-color);
-    color: #f0f0f0;
+    color: var(--base-white);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     height: 100vh;
-    overflow: hidden; /* Prevents body scroll */
+    overflow: hidden;
 }
 
 #container {
@@ -21,7 +30,6 @@ body {
     margin: 20px auto;
 }
 
-/* Chat Page fills the remaining screen */
 #chatPage {
     display: flex;
     flex-direction: column;
@@ -39,96 +47,32 @@ body {
     gap: 15px;
 }
 
-/* Columns */
-#roomListContainer, #userListContainer {
-    flex: 0 0 250px;
-    background-color: var(--secondary-color);
-    border: var(--border-color) 2px solid;
-    border-radius: 5px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-}
-
-#messageContainer {
-    flex-grow: 1;
-    background-color: var(--secondary-color);
-    border: var(--border-color) 2px solid;
-    border-radius: 5px;
-    padding: 5px;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-#messageList {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 10px;
-}
-
-/* Input Area pinned to bottom */
-#inputArea {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    margin-top: 10px;
-    background-color: var(--secondary-color);
-    border-radius: 5px;
-}
-
-#messageContent {
-    flex-grow: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    background: #f1f1f1;
-}
-
-/* Buttons */
-#sendBtn { background-color: #4CAF50; }
-#disconnectBtn { background-color: #f44336; }
-#attachmentBtn { background-color: #2196F3; cursor: pointer; }
 button{
-    border-radius: 5px;
-    padding: 8px;
-    cursor: pointer;
-    color: #4d4d4d;
-    box-shadow: none;
-}
-.room-btn.active{
-    font-weight: bold;
-    background-color: #2e2e47;
-}
-.room-btn {
-    background-color:  #353545;
+    align-items: center;
+    padding: 10px 20px;
     border: none;
-    margin-bottom: 8px;
-    padding: 8px;
+    border-radius: 8px;
+    color: var(--base-white);
+}
+
+input[type="text"], 
+input[type="password"],
+textarea{
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+
+    border: 2px solid var(--border-color);
     border-radius: 5px;
+
+    background-color: var(--tetnary-color); 
+    color: var(--base-white);
+
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 1.2;
+
+    outline: none; 
+    transition: all 0.2s ease-in-out;
 }
 
-
-
-/* Components */
-.message-bubble {
-    background-color: #353545;
-    border-radius: 5px;
-    margin-bottom: 8px;
-    padding: 8px;
-}
-
-.chat-media {
-    max-width: 100%;
-    display: block;
-    margin-top: 5px;
-    border-radius: 5px;
-}
-
-.timestamp {
-    color: #888;       /* Make sure this is a visible shade of gray */
-    font-size: 0.8em;  /* Make sure it's not 0px */
-    margin-right: 5px;
-}

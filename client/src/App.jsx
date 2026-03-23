@@ -4,9 +4,16 @@ import { CryptoEngine } from './CryptoEngine';
 import { Vault } from './Vault';
 import { DBHandler, DB_KEYS  } from './DBHandler';
 import { embedProviders } from './utils/embedProviders';
-import UserList from "./components/Userlist";
-import ChannelList from "./components/Channellist";
-import Message from "./components/Message";
+
+import UserList from "./components/Userlist/Userlist";
+import ChannelList from "./components/Channellist/Channellist";
+import Message from "./components/Message/Message";
+import InputArea from "./components/InputArea/InputArea";
+
+import NoProfileState from "./siteStates/no_profile/noProfile";
+import Register from "./siteStates/register/register";
+import Login from "./siteStates/login/login";
+
 import './App.css';
 
 function App() {
@@ -78,15 +85,8 @@ function App() {
   }, [loginState]);
 
   useEffect(() => {
-    const checkForProfile = async () => {
-      const profileExists = await DBHandler.has(DB_KEYS.PROFILE);
-      
-      const newState = profileExists ? 'UNLOCK' : 'NO_PROFILE';
-      setLoginState(newState);
-    }
-
     checkForProfile();
-    CryptoEngine.generateSignKeys();
+    
   },[]);
 
   useEffect(() => {
@@ -94,6 +94,16 @@ function App() {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const checkForProfile = async () => {
+    setUsername('');
+    setPassword('');
+    const profileExists = await DBHandler.has(DB_KEYS.PROFILE);
+      
+    const newState = profileExists ? 'UNLOCK' : 'NO_PROFILE';
+    setLoginState(newState);
+    CryptoEngine.generateSignKeys();
+  };
 
   const switchRoom = (targetRoomId, activeSocket = socket) => {
     if (targetRoomId === currentRoomRef.current) return;
@@ -169,7 +179,9 @@ function App() {
   };
 
   const handleLogout = () => {
-    alert("coming soon");
+    CryptoEngine.wipeSession();
+    setLoginState('CHECK');
+    checkForProfile();
   };
 
   const handleCreateProfile = async () => {
@@ -185,6 +197,8 @@ function App() {
     const encryptedProfile = await Vault.encryptProfile(key, profileObj);
 
     await DBHandler.put(DB_KEYS.PROFILE, { profile: encryptedProfile, salt: salt });
+    setUsername('');
+    setPassword('');
     setLoginState('UNLOCK');
   }
 
@@ -218,92 +232,34 @@ function App() {
         return <h2>Checking for profile...</h2>;
       
       case 'NO_PROFILE':
+        return <NoProfileState setLoginState={setLoginState} />;
+
+      case 'CREATE':
+        return <Register username={username} setUsername={setUsername} password={password} setPassword={setPassword} handleCreateProfile={handleCreateProfile} setLoginState={setLoginState} />;
+
+      case 'UNLOCK':
+        return <Login password={password} setPassword={setPassword} handleUnlock={handleUnlock} />;
+
+      case 'CHAT':
         return (
-          <div id="loginPage">
-            <h2>No profile found in memory</h2>
-            <button onClick= {() => setLoginState('CREATE')}>Create New Profile</button>
-            <button onClick= {() => alert("Import profile (coming soon)")}>Load Existing Profile</button>
-          </div>
-        );
-
-        case 'CREATE':
-          return (
-            <div id="creationPage" style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '60px'}}>
-              <h2>Create Your Profile</h2>
-              <p style={{ fontSize: '0.8em', color: '#888' }}>
-                Your password encrypts your local profile file, If you lose the password, you will irreversably lose this account.
-              </p>
-
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Choose a username..."
-              />
-
-              <input
-                type="text"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Choose a password..."
-              />
-
-              <button onClick={handleCreateProfile}> Generate & Encrypt Profile</button>
-              <button onClick={() => setLoginState('NO_PROFILE')} style={{ backgroundColor: '#f44336' }}>
-                Cancel
-              </button>
-            </div>
-          );
-
-        case 'UNLOCK':
-          return(
-            <input
-              type="text"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
-              placeholder='Enter your password'
-            />
-          )
-
-        case 'CHAT':
-          return (
-            <div id="chatPage">
-              <div id="chatBody">
-                <ChannelList channels={channels} currentRoom={currentRoom} unreadChannels={unreadChannels} onSwitch={(id) => switchRoom(id, socket)} />
-                <div id="messageContainer">
-                  <div id="messageList" ref={messageListRef}>
-                    {messages.map((msg, idx) => (
-                      <Message key={idx} msg={msg} onMediaLoad={scrollToBottom} />
-                    ))}
-                  </div>
+          <div id="chatPage">
+            <div id="chatBody">
+              <ChannelList channels={channels} currentRoom={currentRoom} unreadChannels={unreadChannels} onSwitch={(id) => switchRoom(id, socket)} />
+              <div id="messageContainer">
+                <div id="messageList" ref={messageListRef}>
+                  {messages.map((msg, idx) => (
+                    <Message key={idx} msg={msg} onMediaLoad={scrollToBottom} />
+                  ))}
                 </div>
-                <UserList users={onlineUsers} myKey={localStorage.getItem('publicKey')} />
               </div>
-              <div id="inputArea">
-                <input
-                  type="text"
-                  value={typedMessage}
-                  onChange={(e) => setTypedMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Type a message..."
-                  id="messageContent"
-                />
-                <label htmlFor="attachmentInput" id="attachmentBtn">🖼️</label>
-                <input
-                  type="file"
-                  id="attachmentInput"
-                  onChange={handleMediaUpload}
-                  style={{display: 'none'}}
-                />
-                <button id="sendBtn" onClick={handleSendMessage}>Send</button>
-                <button id="disconnectBtn" onClick={() => handleLogout()}>Disconnect</button>
-              </div>
+              <UserList users={onlineUsers} myKey={localStorage.getItem('publicKey')} />
+            </div>
+            <InputArea message={typedMessage} setMessage={setTypedMessage} mediaUpload={handleMediaUpload} sendMessage={handleSendMessage} handleLogout={handleLogout}/>
           </div>
         );
 
-        default:
-          return <h2>Default return.</h2>
+      default:
+          return <h2>Unknown State.</h2>;
     }
   }
 

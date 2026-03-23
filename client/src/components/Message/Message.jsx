@@ -1,8 +1,8 @@
 import React from 'react';
-import embedProviders from '../utils/embedProviders';
+import embedProviders from '../../utils/embedProviders';
+import './Message.css'
 
 function Message({ idx, msg, onMediaLoad }) {
-  // 1. Handle Timestamp Logic here
   const date = new Date(msg.timestamp || Date.now());
   const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 

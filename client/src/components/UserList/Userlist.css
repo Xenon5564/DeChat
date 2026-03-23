@@ -1,0 +1,9 @@
+#userListContainer {
+    flex: 0 0 250px;
+    background-color: var(--secondary-color);
+    border: var(--border-color) 2px solid;
+    border-radius: 5px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+}

@@ -1,0 +1,21 @@
+#roomListContainer {
+    flex: 0 0 250px;
+    background-color: var(--secondary-color);
+    border: var(--border-color) 2px solid;
+    border-radius: 5px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.room-btn.active{
+    font-weight: bold;
+    background-color: #2e2e47;
+}
+.room-btn {
+    background-color:  #353545;
+    border: none;
+    margin-bottom: 8px;
+    padding: 8px;
+    border-radius: 5px;
+}

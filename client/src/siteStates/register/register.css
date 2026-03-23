@@ -1,0 +1,17 @@
+#registerPage {
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+    padding: 100px;
+
+}
+
+#registerBtn {
+    background-color: var(--button-accept);
+    cursor: pointer;
+}
+
+#cancelBtn {
+    background-color: var(--button-decline);
+    cursor: pointer;
+}

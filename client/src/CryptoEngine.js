@@ -53,7 +53,7 @@ export const CryptoEngine = {
         return { publicKey: publicKeyJSON, privateKey: privateKeyJSON };
     },
 
-     async importKeys(keyPairStrings) {
+    async importKeys(keyPairStrings) {
         const privateKeyObject = await window.crypto.subtle.importKey(
             "jwk",                  
             keyPairStrings.privateKey, 
@@ -74,5 +74,9 @@ export const CryptoEngine = {
             privateKey: privateKeyObject,
             publicKey: publicKeyObject
         };
+    },
+
+    async wipeSession() {
+        this.activeKeyPair = null;
     }
 };

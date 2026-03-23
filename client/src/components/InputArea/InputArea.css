@@ -1,0 +1,19 @@
+#inputArea {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: var(--secondary-color);
+    border-radius: 5px;
+}
+
+#sendBtn { background-color: var(--button-accept); }
+#disconnectBtn { background-color: var(--button-decline); }
+#attachmentBtn { 
+    background-color: #2196F3; 
+    cursor: pointer; 
+    padding: 7px;
+    border-radius: 5px;
+}
