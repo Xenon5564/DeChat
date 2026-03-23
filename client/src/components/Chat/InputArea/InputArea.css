@@ -21,4 +21,12 @@
     cursor: pointer; 
     padding: 7px;
     border-radius: 5px;
+    transition: var(--fast-transition);
+}
+
+#attachmentBtn:hover {
+    transform: scale(1.05);
+}
+#attachmentBtn:active {
+    transform: scale(0.95);
 }

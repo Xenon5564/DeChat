@@ -1,0 +1,29 @@
+#dashboard {
+    display: flex;
+    flex-direction: row;
+    gap:5px;
+    height: calc(100vh - 40px);
+}
+
+#serverSidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 30px;
+    padding: 5px;
+    border-radius: 5px;
+    border: var(--border-color) 2px solid;
+    
+    transition: var(--medium-transition);
+
+}
+#serverSidebar:hover {
+    width: 70px;
+}
+
+#chatArea {
+    display: flex;
+    flex-grow: 1;
+    border-radius: 5px;
+    border: var(--border-color) 2px solid; 
+}

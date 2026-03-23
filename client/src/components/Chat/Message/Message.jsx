@@ -1,5 +1,5 @@
 import React from 'react';
-import embedProviders from '../../utils/embedProviders';
+import embedProviders from '../../../utils/embedProviders';
 import './Message.css'
 
 function Message({ idx, msg, onMediaLoad }) {

@@ -23,8 +23,8 @@ function register({username, setUsername, password, setPassword, handleCreatePro
                 placeholder="Choose a password..."
             />
 
-              <button id="registerBtn" onClick={handleCreateProfile}> Generate & Encrypt Profile</button>
-              <button id="cancelBtn" onClick={() => setLoginState('NO_PROFILE')}>
+              <button className="btn-roundSquare" id="registerBtn" onClick={handleCreateProfile}> Generate & Encrypt Profile</button>
+              <button className="btn-roundSquare" id="cancelBtn" onClick={() => setLoginState('NO_PROFILE')}>
                 Cancel
               </button>
         </div>

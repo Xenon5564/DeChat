@@ -11,6 +11,11 @@
 
     --button-accept: #4CAF50;
     --button-decline: #f44336;
+
+
+    --fast-transition: 0.1s;
+    --medium-transition: 0.2s;
+    --slow-transition: 0.4s
 }
 
 body {
@@ -48,12 +53,39 @@ body {
 }
 
 button{
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    background-color: var(--secondary-color);
+    color: var(--base-white); 
+    transition: var(--fast-transition);
+}
+button:hover{
+    transform: scale(1.05);
+}
+button:active{
+    transform: scale(0.95);
+}
+
+.btn-roundSquare {
     align-items: center;
     padding: 10px 20px;
-    border: none;
     border-radius: 8px;
-    color: var(--base-white);
 }
+
+.btn-roundButton {
+    width: 100%;
+    aspect-ratio: 1/1;
+    align-items: center;
+    border-radius: 50%;
+    transition: var(--fast-transition);
+    background-size: cover;      
+    background-position: center;
+}
+.btn-roundButton:hover {
+    border-radius: 16px;
+}
+
 
 input[type="text"], 
 input[type="password"],

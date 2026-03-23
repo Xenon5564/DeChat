@@ -1,9 +1,9 @@
 #registerPage {
     display: flex; 
-    flex-direction: column; 
+    flex-direction: column;
+    justify-content: center; 
     gap: 10px; 
     padding: 100px;
-
 }
 
 #registerBtn {

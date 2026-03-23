@@ -19,8 +19,8 @@ function InputArea({message, setMessage, mediaUpload, sendMessage, handleLogout}
                 onChange={mediaUpload}
                 style={{display: 'none'}}
             />
-            <button id="sendBtn" onClick={sendMessage}>Send</button>
-            <button id="disconnectBtn" onClick={() => handleLogout()}>Disconnect</button>
+            <button className="btn-roundSquare" id="sendBtn" onClick={sendMessage}>Send</button>
+            <button className="btn-roundSquare" id="disconnectBtn" onClick={() => handleLogout()}>Disconnect</button>
         </div>
     )
 }

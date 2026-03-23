@@ -10,7 +10,3 @@
 #loadProfile:hover, #createProfile:hover {
     background-color: var(--button-secondary-color)
 }
-
-#loadProfile:active, #createProfile:active {
-    transform: scale(0.95);
-}

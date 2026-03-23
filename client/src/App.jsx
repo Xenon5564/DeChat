@@ -4,14 +4,10 @@ import { CryptoEngine } from './CryptoEngine';
 import { DBHandler, DB_KEYS  } from './DBHandler';
 import { embedProviders } from './utils/embedProviders';
 
-import UserList from "./components/Userlist/Userlist";
-import ChannelList from "./components/Channellist/Channellist";
-import Message from "./components/Message/Message";
-import InputArea from "./components/InputArea/InputArea";
-
 import NoProfileState from "./siteStates/no_profile/noProfile";
 import Register from "./siteStates/register/register";
 import Login from "./siteStates/login/login";
+import Dashboard from "./siteStates/dashboard/dashboard";
 
 import './App.css';
 
@@ -36,7 +32,7 @@ function App() {
   }, [currentRoom]);
 
   useEffect(() => {
-    if (loginState !== 'CHAT') return;
+    if (loginState !== 'DASHBOARD') return;
 
     let newSocket;
 
@@ -212,7 +208,7 @@ function App() {
       CryptoEngine.importKeys(decryptedProfile.signKeys);
       setUsername(decryptedProfile.username);
       setPublicKey(JSON.stringify(decryptedProfile.signKeys.publicKey));
-      setLoginState('CHAT');
+      setLoginState('DASHBOARD');
     } catch (error) {
       alert('Wrong password');
     }
@@ -239,23 +235,8 @@ function App() {
       case 'UNLOCK':
         return <Login password={password} setPassword={setPassword} handleUnlock={handleUnlock} />;
 
-      case 'CHAT':
-        return (
-          <div id="chatPage">
-            <div id="chatBody">
-              <ChannelList channels={channels} currentRoom={currentRoom} unreadChannels={unreadChannels} onSwitch={(id) => switchRoom(id, socket)} />
-              <div id="messageContainer">
-                <div id="messageList" ref={messageListRef}>
-                  {messages.map((msg, idx) => (
-                    <Message key={idx} msg={msg} onMediaLoad={scrollToBottom} />
-                  ))}
-                </div>
-              </div>
-              <UserList users={onlineUsers} myKey={localStorage.getItem('publicKey')} />
-            </div>
-            <InputArea message={typedMessage} setMessage={setTypedMessage} mediaUpload={handleMediaUpload} sendMessage={handleSendMessage} handleLogout={handleLogout}/>
-          </div>
-        );
+      case 'DASHBOARD':
+        return <Dashboard channels={channels} setTypedMessage={setTypedMessage} currentRoom={currentRoom} unreadChannels={unreadChannels} socket={socket} switchRoom={switchRoom} messageListRef={messageListRef} messages={messages} scrollToBottom={scrollToBottom} onlineUsers={onlineUsers} typedMessage={typedMessage} handleMediaUpload={handleMediaUpload} handleSendMessage={handleSendMessage} handleLogout={handleLogout} CryptoEngine={CryptoEngine} />;
 
       default:
           return <h2>Unknown State.</h2>;
@@ -264,7 +245,6 @@ function App() {
 
   return (
       <div id="container">
-          <h1>DeChat</h1>
           {renderScreen()}
       </div>
   );
