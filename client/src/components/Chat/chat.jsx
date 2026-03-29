@@ -4,7 +4,6 @@ import UserList from "./UserList/Userlist";
 import ChannelList from "./Channellist/Channellist";
 import Message from "./Message/Message";
 import InputArea from "./InputArea/InputArea";
-import './chat.css';
 
 function Chat({channels, currentRoom, unreadChannels, socket, switchRoom, messageListRef, messages, scrollToBottom, onlineUsers, typedMessage, setTypedMessage, handleMediaUpload, handleSendMessage, handleLogout, CryptoEngine}) {
     return (

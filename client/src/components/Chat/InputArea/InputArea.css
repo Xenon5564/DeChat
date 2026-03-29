@@ -17,7 +17,7 @@
 #sendBtn { background-color: var(--button-accept); }
 #disconnectBtn { background-color: var(--button-decline); }
 #attachmentBtn { 
-    background-color: #2196F3; 
+    background-color: var(--button-attachment); 
     cursor: pointer; 
     padding: 7px;
     border-radius: 5px;

@@ -1,24 +1,51 @@
 #dashboard {
     display: flex;
     flex-direction: row;
-    gap:5px;
+    gap:10px;
     height: calc(100vh - 40px);
+}
+
+#sideContainer{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    height: 100%;
+    width: 40px;
+    transition: var(--medium-transition);
+}
+#sideContainer:hover {
+    width: 80px;
 }
 
 #serverSidebar {
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
     gap: 5px;
-    width: 30px;
     padding: 5px;
     border-radius: 5px;
     border: var(--border-color) 2px solid;
-    
-    transition: var(--medium-transition);
-
+    overflow-y: hidden; 
+    overflow-x: hidden;
 }
 #serverSidebar:hover {
-    width: 70px;
+    overflow-y: auto;
+}
+
+#settingsLabel {
+    width: 100%;
+    aspect-ratio: 1/1;
+    border-radius: 50%;
+    border: var(--border-color) 2px solid;
+    transition: var(--medium-transition);
+    cursor: pointer;
+    overflow: hidden;
+}
+#settingsLabel:hover {    
+    transform: scale(1.05);
+}
+#settingsLabel:active {    
+    transform: scale(0.95);
 }
 
 #chatArea {

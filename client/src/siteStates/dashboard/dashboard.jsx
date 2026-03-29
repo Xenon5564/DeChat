@@ -3,13 +3,17 @@ import React from "react";
 import Chat from '../../components/Chat/chat';
 import './dashboard.css';
 
-function Dashboard({channels, currentRoom, unreadChannels, socket, switchRoom, messageListRef, messages, scrollToBottom, onlineUsers, typedMessage, setTypedMessage, handleMediaUpload, handleSendMessage, handleLogout, CryptoEngine}) {
+function Dashboard({avatar, channels, currentRoom, unreadChannels, socket, switchRoom, messageListRef, messages, scrollToBottom, onlineUsers, typedMessage, setTypedMessage, handleMediaUpload, handleSendMessage, handleLogout, CryptoEngine}) {
     return (
         <div id="dashboard">
-            <div id="serverSidebar">
-                <button className="btn-roundButton" id="placeholder"> holder </button>
-                <button className="btn-roundButton" id="addServer"> + </button>
-                <button className="btn-roundButton" id="Settings"> S </button>
+            <div id="sideContainer">
+                <div id="serverSidebar">
+                    <button className="btn-roundButton" id="placeholder"> holder </button>
+                    <button className="btn-roundButton" id="addServer"> + </button>
+                </div>
+
+                <label htmlFor="settingsBtn" id="settingsLabel"> <img src={avatar} className="avatar-preview-img" alt="Preview" /></label>
+                <button id="settingsBtn" style={{ display: 'none' }} />
             </div>
 
             <div id="chatArea">

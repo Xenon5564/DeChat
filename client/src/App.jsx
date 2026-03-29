@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import { CryptoEngine } from './CryptoEngine';
 import { DBHandler, DB_KEYS  } from './DBHandler';
 import { embedProviders } from './utils/embedProviders';
+import { processAvatar, generateAvatar } from './utils/avatar';
 
 import NoProfileState from "./siteStates/no_profile/noProfile";
 import Register from "./siteStates/register/register";
@@ -16,8 +17,10 @@ function App() {
   const [loginState, setLoginState] = useState('CHECK');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [avatar, setAvatar] = useState(null);
   const [publicKey, setPublicKey] = useState('');
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [knownUsers, setKnownUsers] = useState([]);
   const [messages, setMessages] = useState([]);
   const [typedMessage, setTypedMessage] = useState('');
   const [channels, setChannels] = useState([]);
@@ -48,6 +51,7 @@ function App() {
       });
 
       newSocket.on('user list', (users) => setOnlineUsers(users));
+      newSocket.on('known users', (usersDict) => setKnownUsers(usersDict));
       
       newSocket.on('chat message', (msg) => {
         if (msg.roomId === currentRoomRef.current || msg.username === 'System') {
@@ -71,7 +75,8 @@ function App() {
 
       newSocket.emit('join', {
         username: username,
-        publicKey: publicKey
+        publicKey: publicKey,
+        avatar: avatar
       });
     };
 
@@ -187,13 +192,21 @@ function App() {
     const salt = window.crypto.getRandomValues(new Uint8Array(16));
     const key = await CryptoEngine.deriveKey(password, salt);  // Create our AES key
     const signKeyPair = await CryptoEngine.generateSignKeys(); // Create our RSA keys
+    let base64Avatar;
+    
+    if(avatar) {
+      base64Avatar = await processAvatar(avatar);
+    } else {
+      base64Avatar = generateAvatar(username);
+    }
 
-    const profileObj = { username: username, signKeys: signKeyPair };
+    const profileObj = { username: username, avatar: base64Avatar, signKeys: signKeyPair };
     const encryptedProfile = await CryptoEngine.encryptProfile(key, profileObj);
 
     await DBHandler.put(DB_KEYS.PROFILE, { profile: encryptedProfile, salt: salt });
     setUsername('');
     setPassword('');
+    setAvatar(null);
     setLoginState('UNLOCK');
   }
 
@@ -208,6 +221,7 @@ function App() {
       CryptoEngine.importKeys(decryptedProfile.signKeys);
       setUsername(decryptedProfile.username);
       setPublicKey(JSON.stringify(decryptedProfile.signKeys.publicKey));
+      setAvatar(decryptedProfile.avatar);
       setLoginState('DASHBOARD');
     } catch (error) {
       alert('Wrong password');
@@ -230,13 +244,13 @@ function App() {
         return <NoProfileState setLoginState={setLoginState} />;
 
       case 'CREATE':
-        return <Register username={username} setUsername={setUsername} password={password} setPassword={setPassword} handleCreateProfile={handleCreateProfile} setLoginState={setLoginState} />;
+        return <Register username={username} setUsername={setUsername} password={password} setPassword={setPassword} avatar={avatar} setAvatar={setAvatar} handleCreateProfile={handleCreateProfile} setLoginState={setLoginState} />;
 
       case 'UNLOCK':
         return <Login password={password} setPassword={setPassword} handleUnlock={handleUnlock} />;
 
       case 'DASHBOARD':
-        return <Dashboard channels={channels} setTypedMessage={setTypedMessage} currentRoom={currentRoom} unreadChannels={unreadChannels} socket={socket} switchRoom={switchRoom} messageListRef={messageListRef} messages={messages} scrollToBottom={scrollToBottom} onlineUsers={onlineUsers} typedMessage={typedMessage} handleMediaUpload={handleMediaUpload} handleSendMessage={handleSendMessage} handleLogout={handleLogout} CryptoEngine={CryptoEngine} />;
+        return <Dashboard avatar={avatar} channels={channels} setTypedMessage={setTypedMessage} currentRoom={currentRoom} unreadChannels={unreadChannels} socket={socket} switchRoom={switchRoom} messageListRef={messageListRef} messages={messages} scrollToBottom={scrollToBottom} onlineUsers={onlineUsers} typedMessage={typedMessage} handleMediaUpload={handleMediaUpload} handleSendMessage={handleSendMessage} handleLogout={handleLogout} CryptoEngine={CryptoEngine} />;
 
       default:
           return <h2>Unknown State.</h2>;

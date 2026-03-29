@@ -23,7 +23,9 @@ const io = new Server(server, {
 
 let chatChannels = [];
 let chatHistories = {};
+
 let onlineUsers = {};
+let knownUsers = {};
 
 app.use(express.static(__dirname)); //__dirname - dev "../client/dist" - production
 app.use('/uploads', express.static('uploads'));
@@ -56,18 +58,6 @@ function initializeChannels()
         }
     });
 
-}
-
-function generateTag(keyString) {
-    if (!keyString) return '0000';
-     
-    let hash = 0;
-    for (let i = 0; i < keyString.length; i++) {
-        hash = (hash << 5) - hash + keyString.charCodeAt(i);
-        hash |= 0; // Convert to 32bit integer
-    }
-
-    return Math.abs(hash).toString(16).substring(0, 4).toUpperCase();
 }
 
 const storage = multer.diskStorage({
@@ -103,29 +93,34 @@ io.on ('connection', (socket) => {
             return;
         } 
 
-        const userTag = generateTag(data.publicKey);
         socket.username = data.username;
-        socket.tag = userTag;
         socket.publicKey = data.publicKey;
+        socket.avatar = data.avatar;
         onlineUsers[socket.id] = {
             username: socket.username,
-            tag: socket.tag,
-            publicKey: socket.publicKey
+            publicKey: socket.publicKey,
+            avatar: socket.avatar
         };
-
+        knownUsers[socket.publicKey] = {
+            username: socket.username,
+            publicKey: socket.publicKey,
+            avatar: socket.avatar
+        };
+        
         socket.emit('join success');
         
         socket.emit('channel list', chatChannels);
 
-        console.log(`${socket.username}#${socket.tag} joined the chat`);
+        console.log(`${socket.username} joined the chat`);
         const connectMessage = { 
             username: 'System', 
             timestamp: Date.now(),
-            content: `${socket.username}#${socket.tag} has joined the chat` 
+            content: `${socket.username} has joined the chat`
         };
         
         io.emit('chat message', connectMessage);
         io.emit('user list', Object.values(onlineUsers));
+        io.emit('known users', knownUsers);
     });
     socket.on('chat message', async (msg) => {
         try {
@@ -147,14 +142,14 @@ io.on ('connection', (socket) => {
             );
 
             if (isValid) {
-                const fullHandle = `${socket.username}#${socket.tag}`;
+                const fullHandle = `${socket.username}`;
                 msg.timestamp = Date.now();
                 msg.username = fullHandle;
                 chatHistories[roomId].push(msg);
                 console.log(msg);
                 io.to(msg.roomId).emit('chat message', msg);
             } else {
-                console.warn(`Tampered message was detected from ${socket.username}#${socket.tag}`);
+                console.warn(`Tampered message was detected from ${socket.username}`);
                 socket.emit('chat message', { username: 'System', content: 'Message signature verification failed. Your message was not sent.' });
             }
         } catch (error) {
@@ -163,7 +158,7 @@ io.on ('connection', (socket) => {
     });
     socket.on('disconnect', () => {
         if (socket.username) {
-            console.log(`${socket.username}#${socket.tag} disconnected`);
+            console.log(`${socket.username} disconnected`);
     
             delete onlineUsers[socket.id];
             io.emit('user list', Object.values(onlineUsers));
@@ -171,7 +166,7 @@ io.on ('connection', (socket) => {
             const disconnectMessage = { 
                 username: 'System', 
                 timestamp: Date.now(),
-                content: `${socket.username}#${socket.tag} has left the chat` 
+                content: `${socket.username} has left the chat` 
             };
             io.emit('chat message', disconnectMessage);
         }
@@ -180,7 +175,7 @@ io.on ('connection', (socket) => {
         const history = chatHistories[roomId] || [];
         console.log(history);
         socket.emit('chat history', history);
-        console.log(`${socket.username}#${socket.tag} requested history of: ${roomId}`);
+        console.log(`${socket.username} requested history of: ${roomId}`);
     });
     socket.on('switch room', (newRoom) => {
         socket.leave(socket.lastRoom);

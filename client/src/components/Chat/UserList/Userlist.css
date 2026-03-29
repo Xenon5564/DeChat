@@ -7,3 +7,77 @@
     display: flex;
     flex-direction: column;
 }
+
+#userList {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px; 
+}
+
+.user-item {
+    display: flex;
+    align-items: center; 
+    gap: 12px;          
+    padding: 6px 10px;
+    border-radius: 4px;
+    transition: 0.2s ease;
+    cursor: default;
+}
+
+.user-item:hover {
+    background-color: rgba(255, 255, 255, 0.05); 
+    transform: scale(1.05);
+}
+
+.user-list-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--border-color);
+}
+
+.user-item-layout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0; /* CRITICAL: Allows flex child to shrink */
+}
+
+.user-list-info {
+    display: flex;
+    align-items: baseline;
+    min-width: 0; /* CRITICAL: Allows the text block to shrink */
+    flex: 1;      /* Takes up all available space */
+}
+
+.username-text {
+    /* The Magic Trio */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    flex-shrink: 1; /* Tells the name it's okay to get smaller */
+    color: #f0f0f0;
+}
+
+.user-tag {
+    opacity: 0.5;
+    font-size: 0.8em;
+    margin-left: 2px;
+    flex-shrink: 0; /* The tag will NEVER be cut off or shrunk */
+    white-space: nowrap;
+}
+
+.user-list-you {
+    font-size: 0.75em;
+    color: var(--accent-green);
+    margin-left: 5px;
+    flex-shrink: 0; /* Ensure "(You)" stays visible */
+    white-space: nowrap;
+}
