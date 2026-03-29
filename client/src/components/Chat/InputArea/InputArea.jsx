@@ -1,14 +1,16 @@
 import React from "react";
+import { useChat } from '../../../contexts/chatContext';
 import './InputArea.css'
 
-function InputArea({message, setMessage, mediaUpload, sendMessage, handleLogout}) {
+function InputArea() {
+    const { typedMessage, setTypedMessage, handleMediaUpload, handleSendMessage, handleLogout } = useChat(); 
     return(
         <div id="inputArea">
             <input
                 type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendMessage}
+                value={typedMessage}
+                onChange={(e) => setTypedMessage(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Type a message..."
                 id="messageContent"
             />
@@ -16,10 +18,10 @@ function InputArea({message, setMessage, mediaUpload, sendMessage, handleLogout}
             <input
                 type="file"
                 id="attachmentInput"
-                onChange={mediaUpload}
+                onChange={handleMediaUpload}
                 style={{display: 'none'}}
             />
-            <button className="btn-roundSquare" id="sendBtn" onClick={sendMessage}>Send</button>
+            <button className="btn-roundSquare" id="sendBtn" onClick={handleSendMessage}>Send</button>
             <button className="btn-roundSquare" id="disconnectBtn" onClick={() => handleLogout()}>Disconnect</button>
         </div>
     )

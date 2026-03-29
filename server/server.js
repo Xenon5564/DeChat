@@ -146,7 +146,6 @@ io.on ('connection', (socket) => {
                 msg.timestamp = Date.now();
                 msg.username = fullHandle;
                 chatHistories[roomId].push(msg);
-                console.log(msg);
                 io.to(msg.roomId).emit('chat message', msg);
             } else {
                 console.warn(`Tampered message was detected from ${socket.username}`);
@@ -173,9 +172,7 @@ io.on ('connection', (socket) => {
     });
     socket.on('request chat history', (roomId) => {
         const history = chatHistories[roomId] || [];
-        console.log(history);
         socket.emit('chat history', history);
-        console.log(`${socket.username} requested history of: ${roomId}`);
     });
     socket.on('switch room', (newRoom) => {
         socket.leave(socket.lastRoom);

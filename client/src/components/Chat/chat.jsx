@@ -1,15 +1,18 @@
 import React from "react";
+import { useChat } from "../../contexts/chatContext";
+import { CryptoEngine } from "../../CryptoEngine";
 
 import UserList from "./UserList/Userlist";
 import ChannelList from "./Channellist/Channellist";
 import Message from "./Message/Message";
 import InputArea from "./InputArea/InputArea";
 
-function Chat({channels, currentRoom, unreadChannels, socket, switchRoom, messageListRef, messages, scrollToBottom, onlineUsers, typedMessage, setTypedMessage, handleMediaUpload, handleSendMessage, handleLogout, CryptoEngine}) {
+function Chat() {
+    const { messages, messageListRef, scrollToBottom } = useChat();
     return (
         <div id="chatPage">
             <div id="chatBody">
-              <ChannelList channels={channels} currentRoom={currentRoom} unreadChannels={unreadChannels} onSwitch={(id) => switchRoom(id, socket)} />
+              <ChannelList />
               <div id="messageContainer">
                 <div id="messageList" ref={messageListRef}>
                   {messages.map((msg, idx) => (
@@ -17,9 +20,9 @@ function Chat({channels, currentRoom, unreadChannels, socket, switchRoom, messag
                   ))}
                 </div>
               </div>
-              <UserList users={onlineUsers} myKey={CryptoEngine.activeKeyPair.public} /> 
+              <UserList /> 
             </div>
-            <InputArea message={typedMessage} setMessage={setTypedMessage} mediaUpload={handleMediaUpload} sendMessage={handleSendMessage} handleLogout={handleLogout}/>
+            <InputArea />
         </div>
     );
 }

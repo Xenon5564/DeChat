@@ -1,0 +1,132 @@
+import { useState, useEffect, useRef } from 'react';
+import { CryptoEngine } from '../CryptoEngine';
+
+export function useChat(socket, username) {
+    const [messages, setMessages] = useState([]);
+    const [channels, setChannels] = useState([]);
+    const [currentRoom, setCurrentRoom] = useState('');
+    const [unreadChannels, setUnreadChannels] = useState({});
+    const [onlineUsers, setOnlineUsers] = useState([]);
+    const [typedMessage, setTypedMessage] = useState('');
+
+    const messageListRef = useRef(null);
+    const currentRoomRef = useRef(currentRoom);
+
+    // Keep track of which channel is the user viewing.
+    useEffect(() => {   
+        currentRoomRef.current = currentRoom;
+    }, [currentRoom]);
+
+    // Scroll down to new messages
+    useEffect(() => {
+        if(messageListRef.current) {
+            messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+        }
+    }, [messages]);
+
+    useEffect(() => {
+        if (!socket) return;
+        
+        socket.on('channel list', (chans) => {
+            setChannels(chans);
+            if (chans.length > 0) switchRoom(chans[0].id, socket);
+        });
+
+        socket.on('user list', (users) => setOnlineUsers(users));
+
+        socket.on('chat message', (msg) => {
+            if (msg.roomId === currentRoomRef.current || msg.username === 'System') {
+                setMessages((prev) => [...prev, msg]);
+            } else {
+                setUnreadChannels((prev) => ({ ...prev, [msg.roomId]: true }));
+            }
+        });
+
+        socket.on('join error', (err) => {
+            alert(err);
+            handleLogout();
+        });
+
+        socket.on('chat history', (history) => setMessages(history));
+
+        return () => socket.removeAllListeners();
+    }, [socket]);
+
+    const switchRoom = (targetRoomId, activeSocket = socket) => {
+        if (targetRoomId === currentRoomRef.current) return;
+        setCurrentRoom(targetRoomId);
+        setMessages([]);
+
+        setUnreadChannels((prev) => ({
+            ...prev,
+            [targetRoomId]: false
+            }));
+
+            if (activeSocket) {
+            activeSocket.emit('switch room', targetRoomId);
+            activeSocket.emit('request chat history', targetRoomId);
+            }
+    };
+
+  const handleSendMessage = async () => {
+    if (!typedMessage.trim() || !socket) return;
+        const sig = await CryptoEngine.sign(typedMessage.trim());
+        socket.emit('chat message', {
+        username: username,
+        type: 'text',
+        timestamp: Date.now(),
+        content: typedMessage.trim(),
+        signature: sig,
+        roomId: currentRoom
+        });
+        setTypedMessage('');
+  };
+
+  const handleMediaUpload = async (e) => {
+    const file = e.target.files[0];
+    if(!file || !socket) return;
+
+    if(file.size > 100 * 1024 * 1024) return alert("File too big (Max 100MB)");
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/upload', { method: 'POST', body: formData});
+            const result = await response.json();
+            const sig = await CryptoEngine.sign(result.url);
+            
+            const msgObject = {
+                username: username,
+                type: 'media',
+                timestamp: Date.now(),
+                content: result.url,
+                signature: sig,
+                roomId: currentRoom
+            };
+            socket.emit('chat message', msgObject);
+        } catch (err) {
+            console.error("Upload failed", err);
+        }
+    };
+
+    const scrollToBottom = () => {
+        if (messageListRef.current) {
+            messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+        }
+    };
+
+  return {
+    messages,
+    channels, 
+    currentRoom, 
+    unreadChannels,
+    onlineUsers,
+    typedMessage, setTypedMessage,
+    messageListRef,
+    switchRoom,
+    handleSendMessage,
+    handleMediaUpload,
+    scrollToBottom,
+  }
+}

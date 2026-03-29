@@ -1,9 +1,11 @@
 import React from "react";
-
+import { useChat } from '../../contexts/chatContext';
 import Chat from '../../components/Chat/chat';
 import './dashboard.css';
 
-function Dashboard({avatar, channels, currentRoom, unreadChannels, socket, switchRoom, messageListRef, messages, scrollToBottom, onlineUsers, typedMessage, setTypedMessage, handleMediaUpload, handleSendMessage, handleLogout, CryptoEngine}) {
+function Dashboard() {
+    const { avatar } = useChat();
+    
     return (
         <div id="dashboard">
             <div id="sideContainer">
@@ -17,7 +19,7 @@ function Dashboard({avatar, channels, currentRoom, unreadChannels, socket, switc
             </div>
 
             <div id="chatArea">
-                <Chat channels={channels} currentRoom={currentRoom} unreadChannels={unreadChannels} socket={socket} switchRoom={switchRoom} messageListRef={messageListRef} messages={messages} scrollToBottom={scrollToBottom} onlineUsers={onlineUsers} typedMessage={typedMessage} setTypedMessage={setTypedMessage} handleMediaUpload={handleMediaUpload} handleSendMessage={handleSendMessage} handleLogout={handleLogout} CryptoEngine={CryptoEngine} />
+                <Chat />
             </div>
         </div>
     );

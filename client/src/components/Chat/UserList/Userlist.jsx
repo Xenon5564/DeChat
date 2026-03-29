@@ -1,12 +1,17 @@
 import React from 'react';
+import { useChat } from '../../../contexts/chatContext';
+import { CryptoEngine } from '../../../CryptoEngine';
 import './Userlist.css'
 
-function UserList({ users, myKey }) {
+function UserList() {
+    const { onlineUsers } = useChat();
+    const myKey = CryptoEngine.activeKeyPair?.publicKey;
+
     return (
         <div id="userListContainer">
-            <h3>Online users — {users.length}</h3>
+            <h3>Online users — {onlineUsers.length}</h3>
             <ul id="userList">
-                {users.map((user) => (
+                {onlineUsers.map((user) => (
                     <li key={user.publicKey} className="user-item">
                         <div className="user-item-layout">
                             <img src={user.avatar} className='user-list-avatar' alt="pfp" />
