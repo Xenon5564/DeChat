@@ -5,7 +5,9 @@ const express = require('express');
 const https = require('https');
 const multer = require('multer');
 const fs = require('fs');
+const path = require('path');
 const app = express();
+const cors = require('cors');
 
 const options = {
     key: fs.readFileSync('key.pem'),
@@ -29,6 +31,7 @@ let knownUsers = {};
 
 app.use(express.static(__dirname)); //__dirname - dev "../client/dist" - production
 app.use('/uploads', express.static('uploads'));
+app.use(cors());
 
 function initializeChannels()
 {
@@ -84,6 +87,24 @@ app.post('/upload', upload.single('file'), (req, res) => {
     res.json({ url: fileUrl});
 });
 
+app.get('/ping', (req, res) => {
+    try {
+        const details = JSON.parse(fs.readFileSync(path.join(__dirname, 'server_details.json'), 'utf8'));
+        const icon = fs.readFileSync(path.join(__dirname, 'icon.png'));
+        const iconBase64 = `data:image/png;base64,${icon.toString('base64')}`;
+
+        res.json({
+            type: 'dechat',
+            name: details.name,
+            icon: iconBase64
+        });
+    } catch (err) {
+        console.error('Ping failed: ', err);
+        res.status(500).json({ error: 'Server misconfigured'});
+    }
+});
+
+
 io.on ('connection', (socket) => {
     socket.on('join', (data) => {
         const activeUsers = Object.values(onlineUsers);
@@ -110,6 +131,8 @@ io.on ('connection', (socket) => {
         socket.emit('join success');
         
         socket.emit('channel list', chatChannels);
+        socket.emit('user list', Object.values(onlineUsers));
+        socket.emit('known users', knownUsers);
 
         console.log(`${socket.username} joined the chat`);
         const connectMessage = { 
@@ -147,6 +170,12 @@ io.on ('connection', (socket) => {
                 msg.username = fullHandle;
                 chatHistories[roomId].push(msg);
                 io.to(msg.roomId).emit('chat message', msg);
+                console.log(msg);
+                io.emit('message notification', {
+                    roomId: roomId,
+                    username: fullHandle,
+                    timestamp: msg.timestamp
+                });
             } else {
                 console.warn(`Tampered message was detected from ${socket.username}`);
                 socket.emit('chat message', { username: 'System', content: 'Message signature verification failed. Your message was not sent.' });
@@ -173,6 +202,12 @@ io.on ('connection', (socket) => {
     socket.on('request chat history', (roomId) => {
         const history = chatHistories[roomId] || [];
         socket.emit('chat history', history);
+    });
+    socket.on('request user list', () => {
+        socket.emit('user list', Object.values(onlineUsers));
+    });
+    socket.on('request channel list', () => {
+        socket.emit('channel list', chatChannels);
     });
     socket.on('switch room', (newRoom) => {
         socket.leave(socket.lastRoom);

@@ -25,14 +25,33 @@ export function useChat(socket, username) {
     }, [messages]);
 
     useEffect(() => {
+        setMessages([]);
+        setChannels([]);
+        setOnlineUsers([]);
+        setCurrentRoom('');
+    }, [socket]);
+
+    useEffect(() => {
         if (!socket) return;
         
+        // Request initial data from the already-connected background socket
+        socket.emit('request channel list');
+        socket.emit('request user list');
+
         socket.on('channel list', (chans) => {
+            console.log("Received channel list", chans);
             setChannels(chans);
             if (chans.length > 0) switchRoom(chans[0].id, socket);
         });
 
-        socket.on('user list', (users) => setOnlineUsers(users));
+        socket.on('user list', (users) => {
+            console.log("Received user list", users);
+            setOnlineUsers(users);
+        });
+
+        socket.on('known users', (users) => {
+            console.log("Received known users", users);
+        });
 
         socket.on('chat message', (msg) => {
             if (msg.roomId === currentRoomRef.current || msg.username === 'System') {
@@ -44,12 +63,21 @@ export function useChat(socket, username) {
 
         socket.on('join error', (err) => {
             alert(err);
-            handleLogout();
         });
 
-        socket.on('chat history', (history) => setMessages(history));
+        socket.on('chat history', (history) => {
+            console.log("Received history", history);
+            setMessages(history);
+        });
 
-        return () => socket.removeAllListeners();
+        return () => {
+            socket.off('channel list');
+            socket.off('user list');
+            socket.off('known users');
+            socket.off('chat message');
+            socket.off('join error');
+            socket.off('chat history');
+        };
     }, [socket]);
 
     const switchRoom = (targetRoomId, activeSocket = socket) => {

@@ -1,4 +1,5 @@
 import { useAuth } from './hooks/useAuth';
+import { useState } from 'react';
 import { useSocket } from './hooks/useSocket';
 
 import { ChatProvider } from './contexts/chatProvider';
@@ -19,14 +20,22 @@ function App() {
     publicKey,
     handleCreateProfile,
     handleUnlock,
-    handleLogout
+    handleLogout,
+    favouredServers,
+    addFavouredServer,
+    removeFavouredServer,
   } = useAuth();
 
-  const socket = useSocket(
+  const [activeServerUrl, setActiveServerUrl] = useState(null);
+
+  const sockets = useSocket(
     loginState === 'DASHBOARD' ? username : null,
     loginState === 'DASHBOARD' ? publicKey : null,
     loginState === 'DASHBOARD' ? avatar : null,
+    favouredServers
   );
+
+  const activeSocket = sockets[activeServerUrl];
 
   const renderScreen = () => {
     switch (loginState) {
@@ -44,7 +53,17 @@ function App() {
 
       case 'DASHBOARD':
         return (
-          <ChatProvider socket={socket} username={username} avatar={avatar} handleLogout={handleLogout}>
+          <ChatProvider 
+            socket={activeSocket} 
+            username={username} 
+            avatar={avatar} 
+            handleLogout={handleLogout} 
+            favouredServers={favouredServers} 
+            addFavouredServer={addFavouredServer} 
+            removeFavouredServer={removeFavouredServer}
+            activeServerUrl={activeServerUrl}
+            setActiveServerUrl={setActiveServerUrl}
+          >
             <Dashboard />
           </ChatProvider>
         )

@@ -9,6 +9,8 @@ export function useAuth() {
     const [password, setPassword] = useState('');
     const [avatar, setAvatar] = useState(null);
     const [publicKey, setPublicKey] = useState('');
+    const [signKeys, setSignKeys] = useState(null);
+    const [favouredServers, setFavouredServers] = useState([]);
 
     useEffect(() => {
         checkForProfile();
@@ -30,7 +32,7 @@ export function useAuth() {
         const salt = window.crypto.getRandomValues(new Uint8Array(16));
         const key = await CryptoEngine.deriveKey(password, salt);
         const signKeyPair = await CryptoEngine.generateSignKeys();
-        
+
         let base64Avatar;
 
         if(avatar) {
@@ -39,10 +41,11 @@ export function useAuth() {
             base64Avatar = generateAvatar(username);
         }
 
-        const profileObj = { username: username, avatar: base64Avatar, signKeys: signKeyPair};
+        const profileObj = { username: username, avatar: base64Avatar, signKeys: signKeyPair, favouredServers: [] };
         const encryptedProfile = await CryptoEngine.encryptProfile(key, profileObj);
 
         await DBHandler.put(DB_KEYS.PROFILE, { profile: encryptedProfile, salt: salt});
+        setSignKeys(signKeyPair);
         setUsername('');
         setPassword('');
         setAvatar(null);
@@ -64,11 +67,38 @@ export function useAuth() {
             setUsername(decryptedProfile.username);
             setPublicKey(JSON.stringify(decryptedProfile.signKeys.publicKey));
             setAvatar(decryptedProfile.avatar);
+            setSignKeys(decryptedProfile.signKeys);
+            setFavouredServers(decryptedProfile.favouredServers || []);
             setLoginState('DASHBOARD');
         } catch {
             alert('Wrong password');
         }
     }
+
+    const saveFavouredServers = async (updatedServers) => {
+        const encryptedProfile = await DBHandler.get(DB_KEYS.PROFILE);
+        const aesKey = await CryptoEngine.deriveKey(password, encryptedProfile.salt);
+        const updatedProfile = {
+            username,
+            avatar,
+            signKeys: signKeys,
+            favouredServers: updatedServers
+        }
+        const newEncryptedProfile = await CryptoEngine.encryptProfile(aesKey, updatedProfile);
+        await DBHandler.put(DB_KEYS.PROFILE, { profile: newEncryptedProfile, salt: encryptedProfile.salt });
+    }
+
+    const addFavouredServer = async (url) => {
+        const updated = [...favouredServers, url];
+        setFavouredServers(updated);
+        await saveFavouredServers(updated);
+    };
+
+    const removeFavouredServer = async (url) => {
+        const updated = favouredServers.filter(s => s !== url);
+        setFavouredServers(updated);
+        await saveFavouredServers(updated);
+    };
 
     const handleLogout = () => {
         CryptoEngine.wipeSession();
@@ -84,6 +114,9 @@ export function useAuth() {
         publicKey,
         handleCreateProfile,
         handleUnlock,
-        handleLogout
+        handleLogout,
+        favouredServers,
+        addFavouredServer,
+        removeFavouredServer,
     };
 }

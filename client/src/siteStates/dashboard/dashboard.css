@@ -54,3 +54,87 @@
     border-radius: 5px;
     border: var(--border-color) 2px solid; 
 }
+
+#modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+#serverModal {
+    background: var(--primary-color);
+    border: 0.5px solid var(--border-color);
+    border-radius: 12px;
+    padding: 28px;
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-hint {
+    font-size: 12px;
+    margin-bottom: 24px;
+}
+
+#modalButtons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+#connectBtn {
+    background: var(--button-accept);
+}
+
+.server-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.server-icon-placeholder {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.server-offline-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--error-color);
+}
+
+.server-btn {
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.server-btn.active {
+    border-color: var(--button-accept);
+    transform: scale(1.1);
+    box-shadow: 0 0 10px var(--button-accept);
+}
+
+#noActiveServer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    color: var(--secondary-color);
+    text-align: center;
+}
+
+.modal-error {
+    font-size: 12px;
+    color: var(--error-color);
+    margin-bottom: 12px;
+}

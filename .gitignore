@@ -4,3 +4,4 @@ server/cert.pem
 server/uploads/
 server/node_modules
 server/channels.json
+gemini.md
