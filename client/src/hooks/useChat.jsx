@@ -7,6 +7,7 @@ export function useChat(socket, username) {
     const [currentRoom, setCurrentRoom] = useState('');
     const [unreadChannels, setUnreadChannels] = useState({});
     const [onlineUsers, setOnlineUsers] = useState([]);
+    const [knownUsers, setKnownUsers] = useState({});
     const [typedMessage, setTypedMessage] = useState('');
 
     const messageListRef = useRef(null);
@@ -28,6 +29,7 @@ export function useChat(socket, username) {
         setMessages([]);
         setChannels([]);
         setOnlineUsers([]);
+        setKnownUsers({});
         setCurrentRoom('');
     }, [socket]);
 
@@ -37,6 +39,7 @@ export function useChat(socket, username) {
         // Request initial data from the already-connected background socket
         socket.emit('request channel list');
         socket.emit('request user list');
+        socket.emit('request known users');
 
         socket.on('channel list', (chans) => {
             console.log("Received channel list", chans);
@@ -51,6 +54,7 @@ export function useChat(socket, username) {
 
         socket.on('known users', (users) => {
             console.log("Received known users", users);
+            setKnownUsers(users);
         });
 
         socket.on('chat message', (msg) => {
@@ -69,6 +73,11 @@ export function useChat(socket, username) {
             console.log("Received history", history);
             setMessages(history);
         });
+
+        // Request initial data AFTER setting up listeners
+        socket.emit('request channel list');
+        socket.emit('request user list');
+        socket.emit('request known users');
 
         return () => {
             socket.off('channel list');
@@ -150,6 +159,7 @@ export function useChat(socket, username) {
     currentRoom, 
     unreadChannels,
     onlineUsers,
+    knownUsers,
     typedMessage, setTypedMessage,
     messageListRef,
     switchRoom,

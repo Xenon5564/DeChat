@@ -41,6 +41,40 @@
     border: 1px solid var(--border-color);
 }
 
+.avatar-container {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.status-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--secondary-color);
+}
+
+.status-dot.online {
+    background-color: #43b581;
+}
+
+.status-dot.offline {
+    background-color: #747f8d;
+}
+
+.user-item.offline .username-text {
+    color: #747f8d;
+}
+
+.user-item.offline .user-list-avatar {
+    filter: grayscale(0.8);
+    opacity: 0.7;
+}
+
 .user-item-layout {
     display: flex;
     align-items: center;

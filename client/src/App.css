@@ -1,13 +1,13 @@
 :root {
-    --primary-color: #2a2a40;
-    --secondary-color: #444468;
-    --tetnary-color: #1e1e2e;
+    --primary-color: #242436;
+    --secondary-color: #3b3b5c;
+    --tertiary-color: #1e1e2e;
     --border-color: #535374;
 
     --base-white: #f0f0f0;
 
-    --button-primary-color: #444468;
-    --button-secondary-color: #393957;
+    --button-primary-color: #3b3b5c;
+    --button-secondary-color: #2a2a40;
 
     --button-accept: #4CAF50;
     --button-decline: #f44336;
@@ -76,11 +76,15 @@ button:active{
 .btn-roundButton {
     width: 100%;
     aspect-ratio: 1/1;
+    display: flex;
     align-items: center;
+    justify-content: center;
     border-radius: 50%;
     transition: var(--fast-transition);
     background-size: cover;      
     background-position: center;
+    padding: 0;
+    overflow: hidden;
 }
 .btn-roundButton:hover {
     border-radius: 16px;
@@ -97,9 +101,8 @@ textarea{
     border: 2px solid var(--border-color);
     border-radius: 5px;
 
-    background-color: var(--tetnary-color); 
+    background-color: var(--tertiary-color);
     color: var(--base-white);
-
     font-size: 15px;
     font-family: inherit;
     line-height: 1.2;

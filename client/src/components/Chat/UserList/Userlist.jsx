@@ -4,17 +4,28 @@ import { CryptoEngine } from '../../../CryptoEngine';
 import './Userlist.css'
 
 function UserList() {
-    const { onlineUsers } = useChat();
+    const { onlineUsers, knownUsers } = useChat();
     const myKey = CryptoEngine.activeKeyPair?.publicKey;
+
+    const allUsers = Object.values(knownUsers).map(user => {
+        const isOnline = onlineUsers.some(u => u.publicKey === user.publicKey);
+        return { ...user, isOnline };
+    }).sort((a, b) => {
+        if (a.isOnline === b.isOnline) return a.username.localeCompare(b.username);
+        return a.isOnline ? -1 : 1;
+    });
 
     return (
         <div id="userListContainer">
-            <h3>Online users — {onlineUsers.length}</h3>
+            <h3>Users — {allUsers.length}</h3>
             <ul id="userList">
-                {onlineUsers.map((user) => (
-                    <li key={user.publicKey} className="user-item">
+                {allUsers.map((user) => (
+                    <li key={user.publicKey} className={`user-item ${user.isOnline ? 'online' : 'offline'}`}>
                         <div className="user-item-layout">
-                            <img src={user.avatar} className='user-list-avatar' alt="pfp" />
+                            <div className="avatar-container">
+                                <img src={user.avatar} className='user-list-avatar' alt="pfp" />
+                                <div className={`status-dot ${user.isOnline ? 'online' : 'offline'}`} />
+                            </div>
 
                             <span className="user-list-info">
                                 <span className="username-text">{user.username}</span>

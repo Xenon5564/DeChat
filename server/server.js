@@ -206,6 +206,9 @@ io.on ('connection', (socket) => {
     socket.on('request user list', () => {
         socket.emit('user list', Object.values(onlineUsers));
     });
+    socket.on('request known users', () => {
+        socket.emit('known users', knownUsers);
+    });
     socket.on('request channel list', () => {
         socket.emit('channel list', chatChannels);
     });
